@@ -1,0 +1,44 @@
+# Exercise wording and notes
+Exercise
+
+# Logs
+*.log*gz
+*.log
+
+# Binaries
+*.jar
+
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+*.war
+*.ear
+*.sar
+*.class
+
+# Maven 
+target/
+
+# IntelliJ project files 
+*.iml
+*.iws
+*.ipr
+.idea/
+
+# eclipse project file
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+
+# Misc
+*.swp
+.attach_pid*
+
