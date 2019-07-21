@@ -41,4 +41,5 @@ target/
 # Misc
 *.swp
 .attach_pid*
+dependency-reduced-pom.xml
 
