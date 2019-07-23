@@ -1,0 +1,12 @@
+/**
+ * This is actually not a library but just a simple command line tool, so all packages could be restricted.
+ * Anyway exporting the parser package as it could be potentially used if this was not just an exercise :)
+ */
+module net.rubenmartinez.cbcc {
+    requires static lombok;
+    requires jcommander;
+    requires vertx.rx.java2;
+    requires vertx.core;
+
+    exports net.rubenmartinez.cbcc.parser;
+}
