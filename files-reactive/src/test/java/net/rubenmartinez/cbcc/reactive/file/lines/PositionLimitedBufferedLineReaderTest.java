@@ -16,7 +16,13 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Random;
 import java.util.stream.Stream;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 
 public class PositionLimitedBufferedLineReaderTest {
 
@@ -49,7 +55,7 @@ public class PositionLimitedBufferedLineReaderTest {
 
     @ParameterizedTest
     @MethodSource("provideLineTerminations")
-    void testTwoLinesFirstLineLongSplitsInTwo(String lineTermination) throws IOException {
+    void testThreeLinesOnly2Bytes(String lineTermination) throws IOException {
         String FIRST_LINE = "1234567890";
         String SECOND_LINE = "2234567890";
         String THIRD_LINE = "3234567890";
@@ -57,14 +63,153 @@ public class PositionLimitedBufferedLineReaderTest {
 
         setTestFileContentTo(content);
 
-        int maxCharsToRead = FIRST_LINE.length() + lineTermination.length() + SECOND_LINE.length() + lineTermination.length() + 1;
+        int maxCharsToRead = 2;
 
-        var positionLimitedReader = new PositionLimitedBufferedLineReader(Channels.newReader(tempFileChannel, CHARSET), 3);
-        LOGGER.info("First line: {}", positionLimitedReader.readLine());
-        LOGGER.info("Second line: {}", positionLimitedReader.readLine());
-        LOGGER.info("Third line: {}", positionLimitedReader.readLine());
+        var positionLimitedReader = new PositionLimitedBufferedLineReader(Channels.newReader(tempFileChannel, CHARSET), maxCharsToRead);
 
+        assertThat(positionLimitedReader.readLine(), equalTo(FIRST_LINE.substring(0, 2)));
+        assertThat(positionLimitedReader.readLine(), nullValue());
+        assertThat(positionLimitedReader.readLine(), nullValue());
     }
+
+    @ParameterizedTest
+    @MethodSource("provideLineTerminations")
+    void testOneLinesOnly2Bytes(String lineTermination) throws IOException {
+        String content = "1234567890";
+
+        setTestFileContentTo(content);
+
+        int maxCharsToRead = 2;
+
+        var positionLimitedReader = new PositionLimitedBufferedLineReader(Channels.newReader(tempFileChannel, CHARSET), maxCharsToRead);
+
+        assertThat(positionLimitedReader.readLine(), equalTo(content.substring(0, 2)));
+        assertThat(positionLimitedReader.readLine(), nullValue());
+        assertThat(positionLimitedReader.readLine(), nullValue());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideLineTerminations")
+    void testOneLineReadAll(String lineTermination) throws IOException {
+        String content = "1234567890";
+
+        setTestFileContentTo(content);
+
+        int maxCharsToRead = content.length() + 100;
+
+        var positionLimitedReader = new PositionLimitedBufferedLineReader(Channels.newReader(tempFileChannel, CHARSET), maxCharsToRead);
+
+        assertThat(positionLimitedReader.readLine(), equalTo(content));
+        assertThat(positionLimitedReader.readLine(), nullValue());
+        assertThat(positionLimitedReader.readLine(), nullValue());
+    }
+
+
+    @ParameterizedTest
+    @MethodSource("provideLineTerminations")
+    void testThreeLinesOnlyFirstLinePlus2Bytes(String lineTermination) throws IOException {
+        String FIRST_LINE = "1234567890";
+        String SECOND_LINE = "2234567890";
+        String THIRD_LINE = "3234567890";
+        String content = FIRST_LINE + lineTermination + SECOND_LINE + lineTermination + THIRD_LINE;
+
+        setTestFileContentTo(content);
+
+        int maxCharsToRead = FIRST_LINE.length() + lineTermination.length() + 2;
+
+        var positionLimitedReader = new PositionLimitedBufferedLineReader(Channels.newReader(tempFileChannel, CHARSET), maxCharsToRead);
+
+        assertThat(positionLimitedReader.readLine(), equalTo(FIRST_LINE));
+        assertThat(positionLimitedReader.readLine(), equalTo(SECOND_LINE.substring(0, 2)));
+        assertThat(positionLimitedReader.readLine(), nullValue());
+        assertThat(positionLimitedReader.readLine(), nullValue());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideLineTerminations")
+    void testThreeLinesContentLengthRead(String lineTermination) throws IOException {
+        String FIRST_LINE = "1234567890";
+        String SECOND_LINE = "2234567890";
+        String THIRD_LINE = "3234567890";
+        String content = FIRST_LINE + lineTermination + SECOND_LINE + lineTermination + THIRD_LINE;
+
+        setTestFileContentTo(content);
+
+        int maxCharsToRead = content.length();
+
+        var positionLimitedReader = new PositionLimitedBufferedLineReader(Channels.newReader(tempFileChannel, CHARSET), maxCharsToRead);
+
+        assertThat(positionLimitedReader.readLine(), equalTo(FIRST_LINE));
+        assertThat(positionLimitedReader.readLine(), equalTo(SECOND_LINE));
+        assertThat(positionLimitedReader.readLine(), equalTo(THIRD_LINE));
+        assertThat(positionLimitedReader.readLine(), nullValue());
+        assertThat(positionLimitedReader.readLine(), nullValue());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideLineTerminations")
+    void testThreeLinesMoreThanContentLengthRead(String lineTermination) throws IOException {
+        String FIRST_LINE = "1234567890";
+        String SECOND_LINE = "2234567890";
+        String THIRD_LINE = "3234567890";
+        String content = FIRST_LINE + lineTermination + SECOND_LINE + lineTermination + THIRD_LINE;
+
+        setTestFileContentTo(content);
+
+        int maxCharsToRead = content.length() + 200;
+
+        var positionLimitedReader = new PositionLimitedBufferedLineReader(Channels.newReader(tempFileChannel, CHARSET), maxCharsToRead);
+        assertThat(positionLimitedReader.readLine(), equalTo(FIRST_LINE));
+        assertThat(positionLimitedReader.readLine(), equalTo(SECOND_LINE));
+        assertThat(positionLimitedReader.readLine(), equalTo(THIRD_LINE));
+        assertThat(positionLimitedReader.readLine(), nullValue());
+        assertThat(positionLimitedReader.readLine(), nullValue());
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideLineTerminations")
+    void testManyLinesVariableLength(String lineTermination) throws IOException {
+        StringBuilder fileContentBuilder = new StringBuilder();
+        var linesList = new ArrayList<String>();
+
+        fileContentBuilder.append(lineTermination); // Ensure at least some line of zero characters for the tests
+        linesList.add("");
+
+        new Random().ints(10, 1, 5)
+                    .mapToObj(randomCharactersInLine -> getLineOfRandomCharacters(randomCharactersInLine, lineTermination))
+                    .forEach(line -> { fileContentBuilder.append(line); fileContentBuilder.append(lineTermination); linesList.add(line); });
+
+        fileContentBuilder.append(lineTermination); // Ensure at least some line of zero characters for the tests in the middle of the file
+        linesList.add("");
+
+        new Random().ints(3000, 0, 1000)
+                .mapToObj(randomCharactersInLine -> getLineOfRandomCharacters(randomCharactersInLine, lineTermination))
+                .forEach(line -> { fileContentBuilder.append(line); fileContentBuilder.append(lineTermination); linesList.add(line); });
+
+        fileContentBuilder.append(lineTermination); // Ensure at least some line of zero characters for the tests
+        linesList.add("");
+
+        String content = fileContentBuilder.toString();
+
+        setTestFileContentTo(content);
+
+        int startPosition = 0;
+        for (String line: linesList) {
+            tempFileChannel.position(startPosition);
+            int maxCharsToRead = line.length() + lineTermination.length();
+            var positionLimitedReader = new PositionLimitedBufferedLineReader(Channels.newReader(tempFileChannel, CHARSET), maxCharsToRead);
+            assertThat(positionLimitedReader.readLine(), equalTo(line));
+            startPosition += maxCharsToRead;
+        }
+    }
+
+    private static String getLineOfRandomCharacters(int numberOfCharacters, String lineTermination) {
+        StringBuilder lineBuilder = new StringBuilder();
+        new Random().ints(numberOfCharacters, 'a', 'z').forEach(lineBuilder::append);
+
+        return lineBuilder.toString();
+    }
+
 }
 
 

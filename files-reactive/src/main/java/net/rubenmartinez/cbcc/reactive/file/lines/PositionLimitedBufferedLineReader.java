@@ -40,21 +40,25 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * This is a very drastic solution, copying JDK11's {@link java.io.BufferedReader} here, but I haven't found any class that made this
+ * A {@link Reader} that allows reading lines limiting the maximum number of characters read.
+ *
+ * This is a very drastic solution, modifying JDK11's {@link java.io.BufferedReader} here, but I haven't found any class that made this
  * I could always write my own BufferedReader with this functionality, but JDK's one is already working and very tested, so why not.
+ *
+ * Also this version doesn't use locks for efficiency, so it shouldn't be used by different threads at the same time.
+ *
+ * It has also other changes in favour of XXX legibility though (simplifications for logic not needed, variable names..) although it is still not quite clean
  */
 
 public class PositionLimitedBufferedLineReader extends Reader {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PositionLimitedBufferedLineReader.class);
-
-    private Reader in;
+    private Reader inReader;
 
     private long totalCharReadCount;
     private long maxCharsToRead;
 
-    private char cb[];
-    private int nChars, nextChar;
+    private char charBuffer[];
+    private int charsInBuffer, nextChar;
 
     private static final int INVALIDATED = -2;
 
@@ -76,12 +80,13 @@ public class PositionLimitedBufferedLineReader extends Reader {
      */
     public PositionLimitedBufferedLineReader(Reader in, int bufferSize, long maxCharsToRead) {
         super(in);
-        if (bufferSize <= 0)
+        if (bufferSize <= 0) {
             throw new IllegalArgumentException("Buffer size <= 0");
-        this.in = in;
-        cb = new char[bufferSize];
-        nextChar = nChars = 0;
+        }
 
+        this.inReader = in;
+        charBuffer = new char[bufferSize];
+        nextChar = charsInBuffer = 0;
 
         this.totalCharReadCount = 0;
         this.maxCharsToRead = maxCharsToRead;
@@ -100,7 +105,7 @@ public class PositionLimitedBufferedLineReader extends Reader {
 
     /** Checks to make sure that the stream has not been closed */
     private void ensureOpen() throws IOException {
-        if (in == null)
+        if (inReader == null)
             throw new IOException("Stream closed");
     }
 
@@ -110,10 +115,10 @@ public class PositionLimitedBufferedLineReader extends Reader {
     private void fill() throws IOException {
         int n;
         do {
-            n = in.read(cb, 0, cb.length);
+            n = inReader.read(charBuffer, 0, charBuffer.length);
         } while (n == 0);
         if (n > 0) {
-            nChars = n;
+            charsInBuffer = n;
             nextChar = 0;
         }
     }
@@ -138,77 +143,67 @@ public class PositionLimitedBufferedLineReader extends Reader {
         StringBuffer s = null;
         int startChar;
 
-        synchronized (lock) {
-            ensureOpen();
-            boolean omitLF = ignoreLF || skipLF;
+        ensureOpen();
+        boolean omitLF = ignoreLF || skipLF;
 
-            LOGGER.debug("readLine(): nextChar: {}, nChars: {}, totalCharReadCount: {}, maxCharsToRead: {}", nextChar, nChars, totalCharReadCount, maxCharsToRead);
+        bufferLoop:
+        for (;;) {
 
-            bufferLoop:
-            for (;;) {
-
-                if (nextChar >= nChars) {
-                    fill();
-                    LOGGER.debug("Filled buffer: omitLF: {}, skipLF: {}, nextChar: {}, nChars: {}, totalCharReadCount: {}, maxCharsToRead: {}", omitLF, skipLF, nextChar, nChars, totalCharReadCount, maxCharsToRead);
-                }
-                if (nextChar >= nChars || totalCharReadCount >= maxCharsToRead) { /* EOF or limit reached */
-                    LOGGER.debug("EOF or limit reached: omitLF: {}, skipLF: {}, nextChar: {}, nChars: {}, totalCharReadCount: {}, maxCharsToRead: {}", omitLF, skipLF, nextChar, nChars, totalCharReadCount, maxCharsToRead);
-                    if (s != null && s.length() > 0)
-                        return s.toString();
-                    else
-                        return null;
-                }
-                boolean eol = false;
-                char c = 0;
-                int i;
-
-                /* Skip a leftover '\n', if necessary */
-                if (omitLF && (cb[nextChar] == '\n')) {
-                    LOGGER.debug("Skipped leftover '\n': omitLF: {}, skipLF: {}, nextChar: {}, nChars: {}, totalCharReadCount: {}, maxCharsToRead: {}", omitLF, skipLF, nextChar, nChars, totalCharReadCount, maxCharsToRead);
-                    totalCharReadCount++;
-                    nextChar++;
-                }
-                skipLF = false;
-                omitLF = false;
-
-                charLoop:
-                for (i = nextChar; i < nChars; i++) {
-                    c = cb[i];
-                    totalCharReadCount++;
-                    if (totalCharReadCount >= maxCharsToRead) {
-                        break charLoop;
-                    }
-                    if ((c == '\n') || (c == '\r')) {
-                        eol = true;
-                        break charLoop;
-                    }
-                    LOGGER.debug("In charLoop: omitLF: {}, skipLF: {}, nextChar: {}, nChars: {}, totalCharReadCount: {}, maxCharsToRead: {}", omitLF, skipLF, nextChar, nChars, totalCharReadCount, maxCharsToRead);
-                }
-                startChar = nextChar;
-                nextChar = i;
-                LOGGER.debug("After charLoop: omitLF: {}, skipLF: {}, nextChar: {}, nChars: {}, totalCharReadCount: {}, maxCharsToRead: {}", omitLF, skipLF, nextChar, nChars, totalCharReadCount, maxCharsToRead);
-
-                if (eol) {
-                    LOGGER.debug("EOL: omitLF: {}, skipLF: {}, nextChar: {}, nChars: {}, totalCharReadCount: {}, maxCharsToRead: {}, startChar: {}", omitLF, skipLF, nextChar, nChars, totalCharReadCount, maxCharsToRead, startChar);
-                    String str;
-                    if (s == null) {
-                        str = new String(cb, startChar, i - startChar);
-                    } else {
-                        s.append(cb, startChar, i - startChar);
-                        str = s.toString();
-                    }
-                    totalCharReadCount++;
-                    nextChar++;
-                    if (c == '\r') {
-                        skipLF = true;
-                    }
-                    return str;
-                }
-
-                if (s == null)
-                    s = new StringBuffer(defaultExpectedLineLength);
-                s.append(cb, startChar, i - startChar);
+            if (nextChar >= charsInBuffer) {
+                fill();
             }
+            if (nextChar >= charsInBuffer || totalCharReadCount > maxCharsToRead) { /* EOF or limit reached */
+                if (s != null && s.length() > 0)
+                    return s.toString();
+                else
+                    return null;
+            }
+            boolean eol = false;
+            char c = 0;
+            int i;
+
+            /* Skip a leftover '\n', if necessary */
+            if (omitLF && (charBuffer[nextChar] == '\n')) {
+                totalCharReadCount++;
+                nextChar++;
+            }
+            skipLF = false;
+            omitLF = false;
+
+            charLoop:
+            for (i = nextChar; i < charsInBuffer; i++) {
+                c = charBuffer[i];
+                totalCharReadCount++;
+                //LOGGER.debug("In charLoop (c={}): omitLF: {}, skipLF: {}, nextChar: {}, charsInBuffer: {}, totalCharReadCount: {}, maxCharsToRead: {}", c, omitLF, skipLF, nextChar, charsInBuffer, totalCharReadCount, maxCharsToRead);
+                if (totalCharReadCount > maxCharsToRead) {
+                    break charLoop;
+                }
+                if ((c == '\n') || (c == '\r')) {
+                    eol = true;
+                    break charLoop;
+                }
+            }
+            startChar = nextChar;
+            nextChar = i;
+
+            if (eol) {
+                String str;
+                if (s == null) {
+                    str = new String(charBuffer, startChar, i - startChar);
+                } else {
+                    s.append(charBuffer, startChar, i - startChar);
+                    str = s.toString();
+                }
+                nextChar++;
+                if (c == '\r') {
+                    skipLF = true;
+                }
+                return str;
+            }
+
+            if (s == null)
+                s = new StringBuffer(defaultExpectedLineLength);
+            s.append(charBuffer, startChar, i - startChar);
         }
     }
 
@@ -259,35 +254,12 @@ public class PositionLimitedBufferedLineReader extends Reader {
     }
 
     /**
-     * Tells whether this stream is ready to be read.  A buffered character
-     * stream is ready if the buffer is not empty, or if the underlying
-     * character stream is ready.
+     * Not suported
      *
-     * @exception  IOException  If an I/O error occurs
+     * @exception  UnsupportedOperationException  always
      */
     public boolean ready() throws IOException {
-        synchronized (lock) {
-            ensureOpen();
-
-            /*
-             * If newline needs to be skipped and the next char to be read
-             * is a newline character, then just skip it right away.
-             */
-            if (skipLF) {
-                /* Note that in.ready() will return true if and only if the next
-                 * read on the stream will not block.
-                 */
-                if (nextChar >= nChars && in.ready()) {
-                    fill();
-                }
-                if (nextChar < nChars) {
-                    if (cb[nextChar] == '\n')
-                        nextChar++;
-                    skipLF = false;
-                }
-            }
-            return (nextChar < nChars) || in.ready();
-        }
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -319,13 +291,13 @@ public class PositionLimitedBufferedLineReader extends Reader {
 
     public void close() throws IOException {
         synchronized (lock) {
-            if (in == null)
+            if (inReader == null)
                 return;
             try {
-                in.close();
+                inReader.close();
             } finally {
-                in = null;
-                cb = null;
+                inReader = null;
+                charBuffer = null;
             }
         }
     }
@@ -346,7 +318,7 @@ public class PositionLimitedBufferedLineReader extends Reader {
      * read the next character or line.
      *
      * <p> If an {@link IOException} is thrown when accessing the underlying
-     * {@code BufferedReader}, it is wrapped in an {@link
+     * {@code BufferedReader}, it is wrapped inReader an {@link
      * UncheckedIOException} which will be thrown from the {@code Stream}
      * method that caused the read to take place. This method will return a
      * Stream if invoked on a BufferedReader that is closed. Any operation on

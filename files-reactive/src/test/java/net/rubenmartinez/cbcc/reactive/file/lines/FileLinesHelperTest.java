@@ -75,7 +75,7 @@ public class FileLinesHelperTest {
 
         FilePositionRange[] filePositionRanges = FileLinesHelper.getSplitPositionsAtLineBoundaries(tempFile.toPath(), splits);
         assertThat(filePositionRanges.length,  equalTo(2));
-        assertThat(filePositionRanges[0].getFromPosition(),  equalTo(0L));
+        assertThat(filePositionRanges[0].getFromPosition(), equalTo(0L));
         assertThat(filePositionRanges[0].getToPosition(), equalTo((long) (FIRST_LINE.length() + lineTermination.length())));
     }
 
