@@ -57,8 +57,9 @@ public class PositionLimitedBufferedLineReaderTest {
 
         setTestFileContentTo(content);
 
-        var positionLimitedReader = new PositionLimitedBufferedLineReader(Channels.newReader(tempFileChannel, CHARSET), 13);
+        int maxCharsToRead = FIRST_LINE.length() + lineTermination.length();
 
+        var positionLimitedReader = new PositionLimitedBufferedLineReader(Channels.newReader(tempFileChannel, CHARSET), maxCharsToRead);
         LOGGER.info("First line: {}", positionLimitedReader.readLine());
         LOGGER.info("Second line: {}", positionLimitedReader.readLine());
         LOGGER.info("Third line: {}", positionLimitedReader.readLine());
