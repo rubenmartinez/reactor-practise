@@ -50,33 +50,6 @@ public final class FileFlux {
     private FileFlux() {
     }
 
-
-
-    public static Flux<String> readLines(Path path, int fromPosition, int toPosition) throws IOException {
-        BufferedReader bufferedReader = Files.newBufferedReader(path, StandardCharsets.US_ASCII);
-
-        return Flux.create(emitter -> {
-            emitter.onDispose(() -> uncheckedExceptionClose(bufferedReader));
-
-            try {
-                String line;
-                while ((line = bufferedReader.readLine()) != null) {
-                    emitter.next(line);
-                }
-            } catch (IOException e) {
-                emitter.error(e);
-            } finally {
-                uncheckedExceptionClose(bufferedReader);
-            }
-
-            emitter.complete();
-        });
-    }
-
-
-    private void configureFluxSinkToEmitFileLines(FluxSink<String> fluxSink, int fromPosition, int toPosition, int averageLineSizeHint) {
-    }
-
     /**
      *
      * XXX
@@ -84,9 +57,29 @@ public final class FileFlux {
      * @param path
      * @return
      */
-    public Flux<String> lines(Path path) {
+    public Flux<String> lines(Path path) throws IOException, FileFluxException {
+        BufferedReader bufferedReader = Files.newBufferedReader(path, StandardCharsets.US_ASCII);
 
-        return null;
+        return Flux.create(fluxSink -> emitFileLinesToFluxSink(bufferedReader, fluxSink)); // Note that Flux *won't* call method emitFileLinesToFluxSink *until* some consumer subscribes to it
+    }
+
+
+
+    private static void emitFileLinesToFluxSink(BufferedReader bufferedReader, FluxSink<String> fluxSink) {
+        fluxSink.onDispose(() -> uncheckedExceptionClose(bufferedReader));
+
+        try {
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                fluxSink.next(line);
+            }
+        } catch (IOException e) {
+            fluxSink.error(e);
+        } finally {
+            uncheckedExceptionClose(bufferedReader);
+        }
+
+        fluxSink.complete();
     }
 
     /**
@@ -103,7 +96,49 @@ public final class FileFlux {
      * @param toPosition
      * @return
      */
-    public Flux<String> lines(Path path, long fromPosition, long toPosition) {
+    public Flux<String> lines(Path path, long fromPosition, long toPosition) throws IOException, FileFluxException {
+
+        var fileChannel = FileChannel.open(path, StandardOpenOption.READ);
+        fileChannel.position(fromPosition);
+
+        var bufferedReader = new BufferedReader(Channels.newReader(fileChannel, CHARSET));
+        bufferedReader.readLine(); // Consuming the expected non-complete line;
+
+
+        return null;
+    }
+
+    private static void emitFileLinesToFluxSink(FileChannel channel, long toPosition, FluxSink<String> fluxSink) {
+        var bufferedReader = new BufferedReader(Channels.newReader(channel, CHARSET));
+
+        fluxSink.onDispose(() -> uncheckedExceptionClose(bufferedReader));
+
+        try {
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                fluxSink.next(line);
+            }
+        } catch (IOException e) {
+            fluxSink.error(e);
+        } finally {
+            uncheckedExceptionClose(bufferedReader);
+        }
+
+        fluxSink.complete();
+    }
+
+    private static String readLineFromFileEnsuringLimitPositionIsNotPassed(BufferedReader bufferedReader, FileChannel underlyingChannel, long limitPosition) throws IOException {
+        String line = bufferedReader.readLine();
+        if (line == null) {
+            return null;
+        }
+        else if (underlyingChannel.position() < limitPosition) {
+            return line;
+        }
+        else {
+            // BufferedReader read more bytes than it should into its internal buffer
+        }
+
 
         return null;
     }
@@ -116,7 +151,7 @@ public final class FileFlux {
      * @param splits
      * @return array of {@link Flux}, each Flux represent a 'stream' of lines for each split of the file
      */
-    public Flux<String>[] splitFileLines(Path path, int splits) {
+    public Flux<String>[] splitFileLines(Path path, int splits) throws IOException {
 
         var positionRanges = FileLinesHelper.getSplitPositionsAtLineBoundaries(path, splits);
         var splitFileLinesFluxArray = new Flux[splits];

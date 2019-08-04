@@ -9,6 +9,8 @@ Anyway, I still built a small using, just as a reference implementation to compa
 ## Build
 
 
+Java 11 is required, and maven (tested with )
+
 ## Run
 
 A quick script is provided for convenience in case this in Linux machines 
