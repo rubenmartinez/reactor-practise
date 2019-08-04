@@ -1,7 +1,5 @@
 package net.rubenmartinez.cbcc;
 
-import lombok.Getter;
-import lombok.ToString;
 import net.rubenmartinez.cbcc.logparser.service.ConnectionLogParserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,10 +11,9 @@ import reactor.core.Disposable;
 
 import javax.inject.Inject;
 import java.nio.file.Path;
-import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
-@ComponentScan(lazyInit = true)
+@ComponentScan
 public class Main implements CommandLineRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
@@ -33,20 +30,6 @@ public class Main implements CommandLineRunner {
         SpringApplication app = new SpringApplication(Main.class);
         app.setBannerMode(Banner.Mode.OFF);
         app.run(args);
-    }
-
-    @ToString
-    @Getter
-    private class TestConsumer implements BiConsumer<TestConsumer, Integer> {
-        private int sum = 0;
-        private int counter = 0;
-
-        @Override
-        public void accept(TestConsumer other, Integer integer) {
-            System.out.println("accept: " + integer);
-            sum += integer;
-            counter++;
-        }
     }
 
     @Override

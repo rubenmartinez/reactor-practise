@@ -1,6 +1,5 @@
 package net.rubenmartinez.cbcc.reactive.file.tailer;
 
-import net.rubenmartinez.cbcc.reactive.file.exception.TailerListenerException;
 import org.apache.commons.io.input.Tailer;
 import org.apache.commons.io.input.TailerListenerAdapter;
 import org.slf4j.Logger;

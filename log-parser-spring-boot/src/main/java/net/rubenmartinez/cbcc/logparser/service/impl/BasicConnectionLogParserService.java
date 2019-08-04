@@ -7,7 +7,6 @@ import net.rubenmartinez.cbcc.logparser.components.LogLineParser;
 import net.rubenmartinez.cbcc.logparser.service.ConnectionLogParserService;
 import net.rubenmartinez.cbcc.logparser.service.impl.domain.LogLine;
 import net.rubenmartinez.cbcc.reactive.file.FileFlux;
-import net.rubenmartinez.cbcc.reactive.file.FileFlux.Mode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -96,7 +95,7 @@ public class BasicConnectionLogParserService implements ConnectionLogParserServi
 
     public Flux<ConnectionLogStats> collectStats(Path logFile, Optional<String> sourceHost, Optional<String> targetHost, Duration windowDuration) throws LogFileIOException {
         try {
-            return FileFlux.lines(logFile, Mode.FOLLOW_UPDATES_FROM_END)
+            return FileFlux.follow(logFile, true)
                     .map(lineParser::parseLine)
                     .window(windowDuration)
                     .flatMapSequential(windowFlux -> createMonoOfStatsFromFluxOfLogLines(windowFlux, sourceHost, targetHost, windowDuration))

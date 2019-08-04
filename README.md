@@ -49,6 +49,8 @@ a Flux is basically a Publisher, quite similar to Java 8 Streams in the sense th
 
 For more information, it is a tricky concept to get
 
+SpringBoot used for, but not for AutoConfiguration
+
 ### Modules
 
 #### file-lines-streamer

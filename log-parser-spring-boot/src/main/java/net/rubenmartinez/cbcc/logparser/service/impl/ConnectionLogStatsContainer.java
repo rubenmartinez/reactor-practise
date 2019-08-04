@@ -11,6 +11,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+/**
+ * package-level class to collect stats about log lines during a period of time
+ *
+ * Note that startTime and duration fields are just informative, they are not involved in any logic
+ *
+ */
 class ConnectionLogStatsContainer implements Consumer<LogLine> {
     private ConnectionLogStats connectionLogStats;
 
@@ -43,11 +49,19 @@ class ConnectionLogStatsContainer implements Consumer<LogLine> {
         if (sourceHost.isPresent()) {
             connectionLogStats.setConnectedFromSourceHost(Optional.of(new ArrayList<>()));
         }
+        else {
+            connectionLogStats.setConnectedFromSourceHost(Optional.empty());
+        }
 
         connectionLogStats.setTargetHost(targetHost);
         if (targetHost.isPresent()) {
             connectionLogStats.setConnectedToTargetHost(Optional.of(new ArrayList<>()));
         }
+        else {
+            connectionLogStats.setConnectedToTargetHost(Optional.empty());
+        }
+
+        connectionLogStats.setSourceHostListWithMostConnections(new ArrayList<>());
     }
 
     @Override
@@ -66,9 +80,13 @@ class ConnectionLogStatsContainer implements Consumer<LogLine> {
     }
 
     private void updateTopConnectionsSource(String logLineSourceHost, Integer newNumberOfConnections) {
-        if (newNumberOfConnections > maxNumberOfConnectionsFromASourceHost) {
+        if (newNumberOfConnections == maxNumberOfConnectionsFromASourceHost) {
+            connectionLogStats.getSourceHostListWithMostConnections().add(logLineSourceHost);
+        }
+        else if (newNumberOfConnections > maxNumberOfConnectionsFromASourceHost) {
             maxNumberOfConnectionsFromASourceHost = newNumberOfConnections;
-            connectionLogStats.setSourceHostWithMostConnections(logLineSourceHost);
+            connectionLogStats.getSourceHostListWithMostConnections().clear();
+            connectionLogStats.getSourceHostListWithMostConnections().add(logLineSourceHost);
         }
     }
 

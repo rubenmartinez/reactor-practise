@@ -22,5 +22,5 @@ public class ConnectionLogStats {
     private Optional<String> sourceHost;
     private Optional<List<String>> connectedFromSourceHost;
 
-    private String sourceHostWithMostConnections;
+    private List<String> sourceHostListWithMostConnections;
 }

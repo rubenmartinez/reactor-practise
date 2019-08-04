@@ -19,15 +19,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-
-        <vertx.version>3.8.0</vertx.version>
-
-        <docker.image>rubenmartinez/host-connections-log-parser:${project.version}</docker.image>
-
         <mainClass>${project.groupId}.Main</mainClass>
-
     </properties>
 
     <dependencies>
@@ -81,48 +73,5 @@
             </plugin>
         </plugins>
     </build>
-
-
-    <profiles>
-    <profile>
-        <id>docker</id>
-        <activation>
-            <activeByDefault>false</activeByDefault>
-        </activation>
-        <build>
-            <plugins>
-                <plugin>
-                    <groupId>io.fabric8</groupId>
-                    <artifactId>docker-maven-plugin</artifactId>
-                    <configuration>
-                        <images>
-                            <image>
-                                <name>${docker.image}</name>
-                                <build>
-                                    <dockerFileDir>${project.basedir}</dockerFileDir>
-                                    <args>
-                                        <VERSION>${project.version}</VERSION>
-                                    </args>
-                                    <tags>
-                                        <tag>latest</tag>
-                                    </tags>
-                                </build>
-                            </image>
-                        </images>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <phase>install</phase>
-                            <goals>
-                                <goal>build</goal>
-                                <goal>push</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-            </plugins>
-        </build>
-    </profile>
-    </profiles>
 
 </project>

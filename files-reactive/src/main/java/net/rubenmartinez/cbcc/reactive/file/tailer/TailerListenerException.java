@@ -1,13 +1,13 @@
-package net.rubenmartinez.cbcc.reactive.file.exception;
+package net.rubenmartinez.cbcc.reactive.file.tailer;
 
 /**
  * Signals that an I/O exception of some sort has occurred
- * while reading the input log file
+ * while 'tailing' a file
  */
 public
 class TailerListenerException extends RuntimeException {
     /**
-     * Constructs an {@code TailerListenerException} with {@code null}
+     * Constructs an {@code FileFluxException} with {@code null}
      * as its error detail message.
      */
     public TailerListenerException() {
@@ -15,7 +15,7 @@ class TailerListenerException extends RuntimeException {
     }
 
     /**
-     * Constructs an {@code TailerListenerException} with the specified detail message.
+     * Constructs an {@code FileFluxException} with the specified detail message.
      *
      * @param message
      *        The detail message (which is saved for later retrieval
@@ -26,7 +26,7 @@ class TailerListenerException extends RuntimeException {
     }
 
     /**
-     * Constructs an {@code TailerListenerException} with the specified detail message
+     * Constructs an {@code FileFluxException} with the specified detail message
      * and cause.
      *
      * <p> Note that the detail message associated with {@code cause} is
@@ -49,7 +49,7 @@ class TailerListenerException extends RuntimeException {
     }
 
     /**
-     * Constructs an {@code TailerListenerException} with the specified cause and a
+     * Constructs an {@code FileFluxException} with the specified cause and a
      * detail message of {@code (cause==null ? null : cause.toString())}
      * (which typically contains the class and detail message of {@code cause}).
      * This constructor is useful for IO exceptions that are little more

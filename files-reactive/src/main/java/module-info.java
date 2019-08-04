@@ -5,4 +5,5 @@ module net.rubenmartinez.cbcc.reactive {
     requires org.apache.commons.io;
     requires reactor.core;
     requires slf4j.api;
+    requires lombok;
 }
