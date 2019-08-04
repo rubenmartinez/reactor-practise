@@ -174,11 +174,15 @@ public class PositionLimitedBufferedLineReader extends Reader {
                 charLoop:
                 for (i = nextChar; i < nChars; i++) {
                     c = cb[i];
+                    totalCharReadCount++;
+                    if (totalCharReadCount >= maxCharsToRead) {
+                        break charLoop;
+                    }
                     if ((c == '\n') || (c == '\r')) {
                         eol = true;
                         break charLoop;
                     }
-                    totalCharReadCount++;
+                    LOGGER.debug("In charLoop: omitLF: {}, skipLF: {}, nextChar: {}, nChars: {}, totalCharReadCount: {}, maxCharsToRead: {}", omitLF, skipLF, nextChar, nChars, totalCharReadCount, maxCharsToRead);
                 }
                 startChar = nextChar;
                 nextChar = i;
