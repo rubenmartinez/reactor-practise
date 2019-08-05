@@ -26,9 +26,7 @@
 package net.rubenmartinez.cbcc.reactive.file.lines;
 
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
@@ -50,7 +48,7 @@ import java.util.stream.StreamSupport;
  * It has also other changes in favour of XXX legibility though (simplifications for logic not needed, variable names..) although it is still not quite clean
  */
 
-public class PositionLimitedBufferedLineReader extends Reader {
+public class PositionLimitedBufferedLineReader extends BufferedReader {
 
     private Reader inReader;
 

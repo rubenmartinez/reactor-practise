@@ -1,0 +1,19 @@
+logparser - Clarity.ai Exercise
+
+Usage: logparser [options] <parse|follow> <log file>
+
+Mode: follow
+    asdfasdfasdfhoaisudhfaiosduf
+
+
+Mode: parse
+    asdfasdfasdfhoaisudhfaiosduf
+
+    --initTimestamp
+    --follow:
+
+    --initDateTime | --initTimestamp:
+    --endDateTime  | --endTimestamp:
+
+
+

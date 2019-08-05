@@ -4,21 +4,67 @@ For this task, I would normally use (eg. Spark, or Kafka File Connector + Kafka 
 
 Anyway, I still built a small using, just as a reference implementation to compare my solution to XXX
 
-[Lombok](https://projectlombok.org/) is used in this project, so when using an IDE to review the source code please install it first in case you haven't already (in IntelliJ Idea it is just a matter of [adding a plugin](https://projectlombok.org/setup/intellij))
+
+Tables times
+
+
+## Design
+
+Even if the @SpringBoot annotation (so no @EnableAutoConfiguration) is not used
+
+There are some utilities from SpringBoot project used: maven plugin (shade plugin can be used for that, but you have it at the same price using springboot)
+
+
+
+Flux has a very rich / expressive [][]
+
+a Flux is basically a Publisher, quite similar to Java 8 Streams in the sense that it has ...
+
+This is specially useful for the second part of the exercise, when the application has to react to some event (a new line written in the watched log file). Using the Java 8 Stream API is not so straightforward, as it is the 'client' of the Streams who *pulls* for new content, requiring some kind of blocking. 
+
+For more information, it is a tricky concept to get
+
+SpringBoot used for, but not for AutoConfiguration
+
+
+library
+
+At the beginning SpringBoot application, but just for a command line not.. so
+
+
+
+
+
+### Module: connections-log-parser
+
+### Module: files-reactive
+
+This is a library that makes all the work to read lines of a file
+
+I also thought
+
+
 
 ## Build
 
-
 Java 11 is required, and maven (tested with )
+
+[Lombok](https://projectlombok.org/) is used in this project, so when using an IDE to review the source code please install it first in case you haven't already (in IntelliJ Idea it is just a matter of [adding a plugin](https://projectlombok.org/setup/intellij))
+
+
 
 ## Run
 
-A quick script is provided for convenience in case this in Linux machines 
+From now on, in this page, the command `logparser` will refer to the main executable, ie. equivalent:
 
+`java -jar target/connections-log-parser-0.0.1.jar`
+
+A convenience script has been included in the tgz file called `connections-log-parser` for Linux shells.
+  
 
 2 modes:
 
-`log-parser-exercise [--unique] <HostName> <InitDateTime> <EndDateTime>`
+`connections-log-parser [--unique] <HostName> <InitDateTime> <EndDateTime>`
  
 `log-parser-exercise --follow [--window=P1H] <HostName>`
 
@@ -31,7 +77,7 @@ window must be, it is an optional parameter, defaults to 1 hour
 
 When using the "--follow"
 
-#### Examples:
+### Examples:
 
 - Get all connections to 
 
@@ -43,15 +89,25 @@ When using the "--follow"
 
 
 
-## Design
 
-Flux has a very rich / expressive [][]
 
-a Flux is basically a Publisher, quite similar to Java 8 Streams in the sense that it has ...
+### Alternatives considered
 
-For more information, it is a tricky concept to get
+#### Kafka
 
-SpringBoot used for, but not for AutoConfiguration
+Requires a kafka cluster
+
+#### Spark
+
+They are very different fwks, but they both can process huge amount of dataa . can read, I don't know this at practical level and as I assumed t, I didn't explore this option much
+
+
+#### Quarkus+GraalVM. In the end I didn't have much time to explore this option. 
+
+
+
+
+
 
 ### Modules
 
@@ -62,27 +118,6 @@ SpringBoot used for, but not for AutoConfiguration
 **An optimization could do a binary search, to try to find , but no time to do this on**
 
 
-### Alternatives considered
-
-#### Kafka or Spark: They are very different fwks, but they both can process huge amount of dataa . can read, I don't know this at practical level and as I assumed t, I didn't explore this option much
-
-#### Quarkus+GraalVM. In the end I didn't have much time to explore this option. 
-
-#### Spring/SpringBoot - started but not needed 
-
-#### Reactive Framework - Using reactive would have lead a, in this case probably the 
-
-### Solution 1: Spring Boot - Very readable and using well known technologies
-
-Finally I chose *not* to use SpringBoot (even if it would have been useful and one can use [CommandLineRunner](https://docs.spring.io/spring-boot/docs/current/api/org/springframework/boot/CommandLineRunner.html),
-just because this is a small command line utility and I thought having a short startup time was more important than the benefits of SpringBoot in this particular case.
-
-Netty is used as...  Netty is actually not needed in this simple example 
-
-
-Note the command line parameters for the SpringBoot application have a double slash `--`, instead of a single slash `-` 
-
-### Solution 2: Quarkus + GraalVM + Project Reactor
 
 
 ## Modes

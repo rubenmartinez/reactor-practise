@@ -8,66 +8,35 @@
     <artifactId>clarity-backend-code-challenge</artifactId>
     <packaging>pom</packaging>
     <version>0.0.1</version>
-    <modules>
-        <module>files-reactive</module>
-        <module>log-parser-spring-boot</module>
-    </modules>
 
     <name>Clarity - Backend Code Challenge</name>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-        <mainClass>${project.groupId}.Main</mainClass>
-    </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.8</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.beust</groupId>
-            <artifactId>jcommander</artifactId>
-            <version>1.72</version>
-        </dependency>
-
-    </dependencies>
+    <modules>
+        <module>files-reactive</module>
+        <module>connections-log-parser</module>
+    </modules>
 
     <build>
         <plugins>
             <plugin>
-                <!-- Version 3.6.1 required for Lombok Jigsaw module -->
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.1</version>
-                <configuration>
-                    <showWarnings>true</showWarnings>
-                    <showDeprecation>true</showDeprecation>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <!-- As we are not using SpringBoot we need this to create an über-jar -->
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
                         <configuration>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>${mainClass}</mainClass>
-                                </transformer>
-                            </transformers>
+                            <target>
+                                <copy todir=".">
+                                    <fileset dir="connections-log-parser/target">
+                                        <include name="connections-log-parser*.jar" />
+                                    </fileset>
+                                </copy>
+                            </target>
                         </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

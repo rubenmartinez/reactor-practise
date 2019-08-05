@@ -17,13 +17,16 @@ public class FileLinesHelper {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileLinesHelper.class);
 
-    private static final int DEFAULT_AVERAGE_LINE_SIZE_HINT = 80;
     private static final String RANDOM_ACCESS_FILE_READONLY_MODE = "r";
 
     /**
      * Just an utility class with private constructor such as {@link java.nio.file.Files}, moreover this is an internal package (non-exposed in module)
      */
     private FileLinesHelper() {
+    }
+
+    public static FilePositionRange[] getSplitPositionsAtLineBoundaries(Path path, int splits) {
+        return getSplitPositionsAtLineBoundaries(path, splits, 0, -1);
     }
 
 
@@ -36,7 +39,7 @@ public class FileLinesHelper {
      * @param splits
      * @return
      */
-    public static FilePositionRange[] getSplitPositionsAtLineBoundaries(Path path, int splits) {
+    public static FilePositionRange[] getSplitPositionsAtLineBoundaries(Path path, int splits, long startPosition, long endPosition) {
         LOGGER.trace("getSplitPositionsAtLineBoundaries({}, {})", path, splits);
         if (splits < 1) {
             throw new IllegalArgumentException("splits must be greater than zero");
@@ -46,12 +49,15 @@ public class FileLinesHelper {
 
             var filePositionRangeList = new ArrayList<FilePositionRange>(splits); // Initial size estimation, but final size could be shrunk (see internal javadoc above)
 
-            long endPosition = randomAccessFile.length();
+            if (endPosition == -1) {
+                endPosition = randomAccessFile.length();
+            }
+
             LOGGER.trace("getSplitPositionsAtLineBoundaries: endPosition={}", endPosition);
             long initialSplitPosition = endPosition / splits;
             LOGGER.trace("getSplitPositionsAtLineBoundaries: initialSplitPosition={}", initialSplitPosition);
 
-            long fromPosition = 0;
+            long fromPosition = startPosition;
             long toPosition = initialSplitPosition;
             for (int i=0; i<splits; i++) {
                 long adjustedToPosition = positionToBeginningOfNextLine(randomAccessFile, toPosition);
@@ -66,7 +72,7 @@ public class FileLinesHelper {
                 fromPosition = adjustedToPosition;
                 toPosition = Math.max(toPosition + initialSplitPosition, fromPosition);
             }
-            ensureLastPositionRangeCoversEndOfFile(filePositionRangeList, endPosition); // This could happen if there are empty lines at the end of the file for example
+            ensureLastRangeCoversEndPosition(filePositionRangeList, endPosition); // This could happen if there are empty lines at the end of the file for example
 
             return filePositionRangeList.toArray(new FilePositionRange[filePositionRangeList.size()]);
 
@@ -75,8 +81,8 @@ public class FileLinesHelper {
         }
     }
 
-    private static void ensureLastPositionRangeCoversEndOfFile(ArrayList<FilePositionRange> filePositionRanges, long fileLength) {
-        filePositionRanges.get(filePositionRanges.size()-1).setToPosition(fileLength);
+    private static void ensureLastRangeCoversEndPosition(ArrayList<FilePositionRange> filePositionRanges, long endPosition) {
+        filePositionRanges.get(filePositionRanges.size()-1).setToPosition(endPosition);
     }
 
     private static long positionToBeginningOfNextLine(RandomAccessFile randomAccessFile, long position) throws IOException {
