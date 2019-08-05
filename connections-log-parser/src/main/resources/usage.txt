@@ -1,6 +1,12 @@
 logparser - Clarity.ai Exercise
 
-Usage: logparser [options] <parse|follow> <log file>
+Usage: logparser <parse|follow> <log file> [options]
+
+Note all options must be preceded with double hyphen '--' and must be separated from their value by an equals sign '=' without any space, eg. --uniqueNames=true
+Note also that all options must be written in the command line after the mandatory parameters
+
+eg.
+logparser follow /tmp/test-file.log --targetHost=asdasd --
 
 Mode: follow
     asdfasdfasdfhoaisudhfaiosduf
@@ -9,11 +15,12 @@ Mode: follow
 Mode: parse
     asdfasdfasdfhoaisudhfaiosduf
 
-    --initTimestamp
-    --follow:
+    --targetHost=<hostName> [Mandatory]
+    --initDateTime | --initTimestamp: [Mandatory]
+    --endDateTime  | --endTimestamp:  [Mandatory]
 
-    --initDateTime | --initTimestamp:
-    --endDateTime  | --endTimestamp:
-
+    --uniqueHosts=<true|false>: When true, only a list of unique hosts connected to the specified targetHost is shown. This is slower and requires more memory, specially if there are a huge number of different hosts. When false a list of sourceHosts and timestamps are shown. Default to false.
+    --splits=n: When n>0 the log file is split in n slices and, by experience n>3 doesn't provide much benefit, but n==2 could reduce parsing time. Defaults to 0.
+    --prefind-times=<true|false>. Default to false.
 
 

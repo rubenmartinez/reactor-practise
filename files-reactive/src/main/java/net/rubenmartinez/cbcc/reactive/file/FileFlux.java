@@ -10,20 +10,18 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Stream;
 
 /**
@@ -46,57 +44,8 @@ public final class FileFlux {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileFlux.class);
 
-    private static final String CHARSET = StandardCharsets.US_ASCII.name(); // TODO Configurable
+    private static final Charset CHARSET = StandardCharsets.US_ASCII; // TODO Configurable
     private static final long POLLING_DELAY_MILLIS = 1000; // TODO Configurable
-
-
-    public static void main(String[] args) throws IOException, InterruptedException {
-
-        var path = Path.of("/home/rmartinez/tmp/ClarityTemp/input-file-1000100000.txt");
-        long startTimeMillis;
-
-        System.out.println("*** START *** ");
-
-        LongAdder noSplitLongAdder = new LongAdder();
-
-        startTimeMillis = System.currentTimeMillis();
-        var linesFlux = FileFlux.lines(path);
-        linesFlux.subscribe(line -> noSplitLongAdder.increment());
-        System.out.println("*** END ("+noSplitLongAdder+") *** elapsed: " + (System.currentTimeMillis() - startTimeMillis) / 1000);
-
-        System.out.println("*** START2 *** ");
-        startTimeMillis = System.currentTimeMillis();
-
-        int splits = 10;
-
-        var linesFluxArray = FileFlux.splitFileLines(path, splits);
-        var longAdders = new LongAdder[splits];
-        var schedulers = new Scheduler[splits];
-
-        var countDownLatch = new CountDownLatch(splits);
-
-        for (int i=0; i<splits; i++) {
-            schedulers[i] = Schedulers.newSingle("linesFlux-"+i);
-            longAdders[i] = new LongAdder();
-            final LongAdder currentLongAdder = longAdders[i];
-            linesFluxArray[i].subscribeOn(schedulers[i]).doOnComplete(() -> countDownLatch.countDown()).subscribe(line -> currentLongAdder.increment());
-        }
-
-        countDownLatch.await();
-
-        long sum = 0;
-        for (var longAdder : longAdders) {
-            long longValue = longAdder.longValue();
-            System.out.println("longValue: " + longValue);
-            sum += longValue;
-        }
-
-        System.out.println("*** END2 ("+sum+") *** elapsed: " + (System.currentTimeMillis() - startTimeMillis) / 1000);
-
-        for (var scheduler : schedulers) {
-            scheduler.dispose();
-        }
-    }
 
     /**
      * Just an utility class with private constructor like {@link java.nio.file.Files}, moreover this is an internal package (non-exposed in module)
@@ -105,21 +54,20 @@ public final class FileFlux {
     }
 
     /**
-     *
-     * XXX
-     *
-     * @param path
-     * @return
      */
-    public static Flux<String> lines(Path path) throws IOException, FileFluxException {
-        BufferedReader bufferedReader = Files.newBufferedReader(path, StandardCharsets.US_ASCII);
+    public static Flux<String> lines(Path path) throws FileFluxException {
+        BufferedReader bufferedReader;
+
+        try {
+            bufferedReader = Files.newBufferedReader(path, CHARSET);
+        } catch (IOException e) {
+            throw new FileFluxException("Error opening file: " + path);
+        }
 
         return Flux.create(fluxSink -> emitFileLinesToFluxSink(bufferedReader, fluxSink)); // Note that Flux won't call method emitFileLinesToFluxSink *until* some consumer subscribes to it
     }
 
     /**
-     *
-     * XXX
      *
      * If {@code fromPosition} is greather than 0, then the first line returned will be always the following line to the line
      * at the given position. This is true even if {@code fromPosition} points already to a beginning of a line in the middle of a file.
@@ -131,9 +79,14 @@ public final class FileFlux {
      * @param toPosition
      * @return
      */
-    public static Flux<String> lines(Path path, long fromPosition, long toPosition) throws IOException, FileFluxException {
-        var fileChannel = FileChannel.open(path, StandardOpenOption.READ);
-        fileChannel.position(fromPosition);
+    public static Flux<String> lines(Path path, long fromPosition, long toPosition) {
+        FileChannel fileChannel;
+        try {
+            fileChannel = FileChannel.open(path, StandardOpenOption.READ);
+            fileChannel.position(fromPosition);
+        } catch (IOException e) {
+            throw new FileFluxException("Error opening file [" + path + "] at position: " + fromPosition);
+        }
         long maxCharsToRead = toPosition - fromPosition;
 
         var bufferedReader = new PositionLimitedBufferedLineReader(Channels.newReader(fileChannel, CHARSET), maxCharsToRead);
@@ -167,8 +120,7 @@ public final class FileFlux {
      * @param splits
      * @return array of {@link Flux}, each Flux represent a 'stream' of lines for each split of the file
      */
-    public static Flux<String>[] splitFileLines(Path path, int splits) throws IOException {
-
+    public static Flux<String>[] splitFileLines(Path path, int splits) {
         var positionRanges = FileLinesHelper.getSplitPositionsAtLineBoundaries(path, splits);
         var splitFileLinesFluxArray = new Flux[splits];
 
@@ -177,7 +129,6 @@ public final class FileFlux {
         }
 
         return splitFileLinesFluxArray;
-
     }
 
     /**
@@ -187,11 +138,26 @@ public final class FileFlux {
      * That listener basically emits a new element (log line) in the Flux when it receives new lines from Tailer.
      */
     public static Flux<String> follow(Path path, boolean fromEnd) {
+        File file = path.toFile();
+
+        createFileIfDoesntExist(file);
+
         return Flux.push(emitter -> {
             var tailerListener = new FluxEmittingTailerListener(emitter);
-            Tailer tailer = new Tailer(path.toFile(), tailerListener, POLLING_DELAY_MILLIS, fromEnd); // TODO XXX Configure 1K
+            Tailer tailer = new Tailer(file, tailerListener, POLLING_DELAY_MILLIS, fromEnd); // TODO Configurable
             tailer.run();
         });
+    }
+
+    private static void createFileIfDoesntExist(File file) {
+        try {
+            if (!file.exists()) {
+                file.createNewFile();
+                LOGGER.info("Created new file as it didn't exist: " + file);
+            }
+        } catch (Exception e) {
+            throw new FileFluxException("File [" + file + "] didn't exist. But couldn't be created empty", e);
+        }
     }
 
     /**

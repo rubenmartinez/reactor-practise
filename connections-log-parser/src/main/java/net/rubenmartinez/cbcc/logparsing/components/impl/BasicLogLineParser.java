@@ -1,6 +1,6 @@
-package net.rubenmartinez.cbcc.logparser.components.impl;
+package net.rubenmartinez.cbcc.logparsing.components.impl;
 
-import net.rubenmartinez.cbcc.logparser.components.LogLineParser;
+import net.rubenmartinez.cbcc.logparsing.components.LogLineParser;
 import net.rubenmartinez.cbcc.domain.ConnectionLogLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,8 +8,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class BasicLogLineParser implements LogLineParser {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(BasicLogLineParser.class);
 
     private static final String HOSTS_CONNECTION_LINE_SEPARATOR = " ";
 
@@ -29,7 +27,6 @@ public class BasicLogLineParser implements LogLineParser {
         }
 
         var hostsConnectionLine = new ConnectionLogLine(timestamp, items[1], items[2]);
-        LOGGER.trace("Generated new HostsConnectionLine: {}", hostsConnectionLine);
         return hostsConnectionLine;
     }
 }

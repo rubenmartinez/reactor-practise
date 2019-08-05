@@ -1,12 +1,12 @@
-package net.rubenmartinez.cbcc.logwatcher.components;
+package net.rubenmartinez.cbcc.logparsing.components.impl;
 
-import net.rubenmartinez.cbcc.domain.ConnectionLogStats;
 import net.rubenmartinez.cbcc.domain.ConnectionLogLine;
+import net.rubenmartinez.cbcc.domain.ConnectionLogStats;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -25,7 +25,6 @@ public class ConnectionLogStatsContainer implements Consumer<ConnectionLogLine> 
     private Optional<String> sourceHost;
     private Optional<String> targetHost;
 
-    private long maxNumberOfConnectionsFromASourceHost;
     private Map<String, Integer> numberOfConnectionsPerHost;
 
     public ConnectionLogStatsContainer(LocalDateTime startTime, Duration duration, Optional<String> sourceHost, Optional<String> targetHost) {
@@ -34,7 +33,6 @@ public class ConnectionLogStatsContainer implements Consumer<ConnectionLogLine> 
         this.sourceHost = sourceHost;
         this.targetHost = targetHost;
 
-        this.maxNumberOfConnectionsFromASourceHost = 0;
         this.numberOfConnectionsPerHost = new HashMap<>();
 
         initializeConnectionLogStats(startTime, duration, sourceHost, targetHost);
@@ -47,21 +45,22 @@ public class ConnectionLogStatsContainer implements Consumer<ConnectionLogLine> 
         connectionLogStats.setDuration(duration);
         connectionLogStats.setSourceHost(sourceHost);
         if (sourceHost.isPresent()) {
-            connectionLogStats.setConnectedFromSourceHost(Optional.of(new ArrayList<>()));
+            connectionLogStats.setConnectedFromSourceHostInWindow(Optional.of(new HashSet<>()));
         }
         else {
-            connectionLogStats.setConnectedFromSourceHost(Optional.empty());
+            connectionLogStats.setConnectedFromSourceHostInWindow(Optional.empty());
         }
 
         connectionLogStats.setTargetHost(targetHost);
         if (targetHost.isPresent()) {
-            connectionLogStats.setConnectedToTargetHost(Optional.of(new ArrayList<>()));
+            connectionLogStats.setConnectedToTargetHostInWindow(Optional.of(new HashSet<>()));
         }
         else {
-            connectionLogStats.setConnectedToTargetHost(Optional.empty());
+            connectionLogStats.setConnectedToTargetHostInWindow(Optional.empty());
         }
 
-        connectionLogStats.setSourceHostListWithMostConnections(new ArrayList<>());
+        connectionLogStats.getSourceHostsWithMostConnectionsInWindow().setList(new HashSet<>());
+        connectionLogStats.getSourceHostsWithMostConnectionsInWindow().setNumberOfConnections(0);
     }
 
     @Override
@@ -80,25 +79,27 @@ public class ConnectionLogStatsContainer implements Consumer<ConnectionLogLine> 
     }
 
     private void updateTopConnectionsSource(String logLineSourceHost, Integer newNumberOfConnections) {
-        if (newNumberOfConnections == maxNumberOfConnectionsFromASourceHost) {
-            connectionLogStats.getSourceHostListWithMostConnections().add(logLineSourceHost);
+        var sourceHostsWithMostConnections = connectionLogStats.getSourceHostsWithMostConnectionsInWindow();
+
+        if (newNumberOfConnections == sourceHostsWithMostConnections.getNumberOfConnections()) {
+            sourceHostsWithMostConnections.getList().add(logLineSourceHost);
         }
-        else if (newNumberOfConnections > maxNumberOfConnectionsFromASourceHost) {
-            maxNumberOfConnectionsFromASourceHost = newNumberOfConnections;
-            connectionLogStats.getSourceHostListWithMostConnections().clear();
-            connectionLogStats.getSourceHostListWithMostConnections().add(logLineSourceHost);
+        else if (newNumberOfConnections > sourceHostsWithMostConnections.getNumberOfConnections()) {
+            sourceHostsWithMostConnections.setNumberOfConnections(newNumberOfConnections);
+            sourceHostsWithMostConnections.getList().clear();
+            sourceHostsWithMostConnections.getList().add(logLineSourceHost);
         }
     }
 
     private void addConnectionIfSourceHostMatches(String logLineSourceHost, String logLineTargetHost) {
         if (this.sourceHost.isPresent() && this.sourceHost.get().equals(logLineSourceHost)) {
-            connectionLogStats.getConnectedFromSourceHost().get().add(logLineTargetHost);
+            connectionLogStats.getConnectedFromSourceHostInWindow().get().add(logLineTargetHost);
         }
     }
 
     private void addConnectionIfTargetHostMatches(String logLineSourceHost, String logLineTargetHost) {
         if (this.targetHost.isPresent() && this.targetHost.get().equals(logLineTargetHost)) {
-            connectionLogStats.getConnectedToTargetHost().get().add(logLineSourceHost);
+            connectionLogStats.getConnectedToTargetHostInWindow().get().add(logLineSourceHost);
         }
     }
 

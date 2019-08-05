@@ -2,25 +2,36 @@ package net.rubenmartinez.cbcc.domain;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
-@Data
+@Getter @Setter
 @JsonInclude(Include.NON_EMPTY)
 public class ConnectionLogStats {
+
+    public ConnectionLogStats() {
+        this.sourceHostsWithMostConnectionsInWindow = new SourceHostsWithMostConnections();
+    }
 
     private LocalDateTime startTime;
     private Duration duration;
 
     private Optional<String> targetHost;
-    private Optional<List<String>> connectedToTargetHost;
+    private Optional<Set<String>> connectedToTargetHostInWindow;
 
     private Optional<String> sourceHost;
-    private Optional<List<String>> connectedFromSourceHost;
+    private Optional<Set<String>> connectedFromSourceHostInWindow;
 
-    private List<String> sourceHostListWithMostConnections;
+    private SourceHostsWithMostConnections sourceHostsWithMostConnectionsInWindow;
+
+    @Getter @Setter
+    public class SourceHostsWithMostConnections {
+        private Set<String> list;
+        private long numberOfConnections;
+    }
 }

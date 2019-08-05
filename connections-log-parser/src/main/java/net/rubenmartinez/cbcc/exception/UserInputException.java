@@ -5,7 +5,7 @@ package net.rubenmartinez.cbcc.exception;
  * while reading the input log file
  */
 public
-class UserInputException extends RuntimeException { // From https://docs.oracle.com/javase/tutorial/essential/exceptions/runtime.html: If a client cannot do anything to recover from the exception, make it an unchecked exception.
+class UserInputException extends LogParserException { // From https://docs.oracle.com/javase/tutorial/essential/exceptions/runtime.html: If a client cannot do anything to recover from the exception, make it an unchecked exception.
     static final long serialVersionUID = 7818375828146090155L;
 
     /**

@@ -5,30 +5,30 @@ package net.rubenmartinez.cbcc.exception;
  * while reading the input log file
  */
 public
-class LogFileParsingException extends RuntimeException { // From https://docs.oracle.com/javase/tutorial/essential/exceptions/runtime.html: If a client cannot do anything to recover from the exception, make it an unchecked exception.
+class LogParserException extends RuntimeException { // From https://docs.oracle.com/javase/tutorial/essential/exceptions/runtime.html: If a client cannot do anything to recover from the exception, make it an unchecked exception.
     static final long serialVersionUID = 7818375828146090155L;
 
     /**
-     * Constructs an {@code LogFileParsingException} with {@code null}
+     * Constructs an {@code LogParserException} with {@code null}
      * as its error detail message.
      */
-    public LogFileParsingException() {
+    public LogParserException() {
         super();
     }
 
     /**
-     * Constructs an {@code LogFileParsingException} with the specified detail message.
+     * Constructs an {@code LogParserException} with the specified detail message.
      *
      * @param message
      *        The detail message (which is saved for later retrieval
      *        by the {@link #getMessage()} method)
      */
-    public LogFileParsingException(String message) {
+    public LogParserException(String message) {
         super(message);
     }
 
     /**
-     * Constructs an {@code LogFileParsingException} with the specified detail message
+     * Constructs an {@code LogParserException} with the specified detail message
      * and cause.
      *
      * <p> Note that the detail message associated with {@code cause} is
@@ -46,12 +46,12 @@ class LogFileParsingException extends RuntimeException { // From https://docs.or
      *
      * @since 1.6
      */
-    public LogFileParsingException(String message, Throwable cause) {
+    public LogParserException(String message, Throwable cause) {
         super(message, cause);
     }
 
     /**
-     * Constructs an {@code LogFileParsingException} with the specified cause and a
+     * Constructs an {@code LogParserException} with the specified cause and a
      * detail message of {@code (cause==null ? null : cause.toString())}
      * (which typically contains the class and detail message of {@code cause}).
      * This constructor is useful for IO exceptions that are little more
@@ -64,7 +64,7 @@ class LogFileParsingException extends RuntimeException { // From https://docs.or
      *
      * @since 1.6
      */
-    public LogFileParsingException(Throwable cause) {
+    public LogParserException(Throwable cause) {
         super(cause);
     }
 }

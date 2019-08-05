@@ -113,9 +113,12 @@ They are very different fwks, but they both can process huge amount of dataa . c
 
 #### file-lines-streamer
 
-#### 
+It is a library, so it tries to minimize dependencies used, and of course it does not use any big framework such as Spring. Actually the only dependencies are reactor-core and sl4j
+
 
 **An optimization could do a binary search, to try to find , but no time to do this on**
+
+
 
 
 

@@ -1,7 +1,7 @@
 package net.rubenmartinez.cbcc.logparser.components.impl;
 
 import net.rubenmartinez.cbcc.Main;
-import net.rubenmartinez.cbcc.logparser.components.LogLineParser;
+import net.rubenmartinez.cbcc.logparsing.components.LogLineParser;
 import net.rubenmartinez.cbcc.domain.ConnectionLogLine;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;

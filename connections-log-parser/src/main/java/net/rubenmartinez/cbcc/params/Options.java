@@ -5,8 +5,10 @@ import net.rubenmartinez.cbcc.exception.UserInputException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 /**
  * Command line options
@@ -19,57 +21,63 @@ public class Options {
 
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME;
 
-    @Value("${logFile:Instructions/input-file-100010000.txt}") // TODO XXX Remove default
-    private String logFile;
-
-    @Value("${initTimestamp}")
+    @Value("${initTimestamp:#{null}}")
     private Long initTimestamp;
 
-    @Value("${endTimestamp}")
+    @Value("${endTimestamp:#{null}}")
     private Long endTimestamp;
 
-    @Value("${initDateTime}")
+    @Value("${initDateTime:#{null}}")
     private String initDateTime;
 
-    @Value("${endDateTime}")
+    @Value("${endDateTime:#{null}}")
     private String endDateTime;
 
-    @Value("${sourceHost}")
-    private String sourceHost;
+    @Value("${sourceHost:#{null}}")
+    private Optional<String> sourceHost;
 
-    @Value("${targetHost}")
-    private String targetHost;
+    @Value("${targetHost:#{null}}")
+    private Optional<String> targetHost;
 
     @Value("${uniqueHosts:false}")
     private boolean uniqueHosts;
 
+    @Value("${statsWindow:PT1H}")
+    private String statsWindow;
+
     @Value("${splits:0}")
     private int splits;
-
-    @Value("${stream:1}") // XXX
-    private int stream;
-
-    @Value("${debug:false}")
-    private boolean debug;
 
     @Value("${timestampOrderToleranceMillis:"+DEFAULT_TIMESTAMP_ORDER_TOLERANCE_MILLIS+"}")
     private long timestampOrderToleranceMillis;
 
 
-    public long getInitTimestamp() {
+    public Duration getStatsWindowDuration() {
+        try {
+            return Duration.parse(getStatsWindow());
+        } catch (Exception e) {
+            throw new UserInputException("Please use a ISO-8601 duration format (eg. \"PT1H\" for 1 hour)");
+
+        }
+    }
+
+    public Long getInitTimestamp() {
         return initTimestamp != null ? initTimestamp : getTimestampFromDateTime(initDateTime);
     }
 
-
-    public long getEndTimestamp() {
+    public Long getEndTimestamp() {
         return endTimestamp != null ? endTimestamp : getTimestampFromDateTime(endDateTime);
     }
 
-    private static final long getTimestampFromDateTime(String dateTime) {
+    private static final Long getTimestampFromDateTime(String dateTime) {
         if (dateTime == null) {
-            throw new UserInputException("Please use ISO-8601 format for datetime options, eg. 2011-12-03T10:15:30");
+            return null;
         }
 
-        return ZonedDateTime.parse(dateTime, dateTimeFormatter).toInstant().getEpochSecond();
+        try {
+            return ZonedDateTime.parse(dateTime, dateTimeFormatter).toInstant().getEpochSecond();
+        } catch (Exception e) {
+            throw new UserInputException("Please use ISO-8601 format for datetime options, eg. 2011-12-03T10:15:30");
+        }
     }
 }
