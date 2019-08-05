@@ -1,0 +1,1 @@
+java -jar connections-log-parser-*.jar "$@"
