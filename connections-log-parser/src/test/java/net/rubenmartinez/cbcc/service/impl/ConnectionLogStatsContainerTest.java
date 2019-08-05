@@ -41,7 +41,7 @@ class ConnectionLogStatsContainerTest {
         statsContainer.accept(new ConnectionLogLine(System.currentTimeMillis(), "source2", "target7"));
 
         var connectionLogStats = statsContainer.getConnectionLogStats();
-        var sourceHostsWithMostConnections = connectionLogStats.getSourceHostsWithMostConnections();
+        var sourceHostsWithMostConnections = connectionLogStats.getSourceHostsWithMostConnectionsInWindow();
 
         assertThat(sourceHostsWithMostConnections.getList(), contains("source1"));
     }
@@ -63,7 +63,7 @@ class ConnectionLogStatsContainerTest {
         statsContainer.accept(new ConnectionLogLine(System.currentTimeMillis(), "sourceTop2", "target2"));
 
         var connectionLogStats = statsContainer.getConnectionLogStats();
-        var sourceHostsWithMostConnections = connectionLogStats.getSourceHostsWithMostConnections();
+        var sourceHostsWithMostConnections = connectionLogStats.getSourceHostsWithMostConnectionsInWindow();
 
         assertThat(sourceHostsWithMostConnections.getList(), containsInAnyOrder("sourceTop1", "sourceTop2"));
     }
@@ -79,7 +79,7 @@ class ConnectionLogStatsContainerTest {
         statsContainer.accept(new ConnectionLogLine(System.currentTimeMillis(), "source7", "target7"));
 
         var connectionLogStats = statsContainer.getConnectionLogStats();
-        var sourceHostsWithMostConnections = connectionLogStats.getSourceHostsWithMostConnections();
+        var sourceHostsWithMostConnections = connectionLogStats.getSourceHostsWithMostConnectionsInWindow();
 
         assertThat(sourceHostsWithMostConnections.getList(), containsInAnyOrder("source1", "source2", "source3", "source4", "source5", "source6", "source7"));
     }
@@ -99,7 +99,7 @@ class ConnectionLogStatsContainerTest {
         assertEquals(duration, connectionLogStats.getDuration());
         assertEquals(Optional.empty(), connectionLogStats.getSourceHost());
         assertEquals(Optional.empty(), connectionLogStats.getTargetHost());
-        assertEquals(Optional.empty(), connectionLogStats.getConnectedToTargetHost());
-        assertEquals(Optional.empty(), connectionLogStats.getConnectedFromSourceHost());
+        assertEquals(Optional.empty(), connectionLogStats.getConnectedToTargetHostInWindow());
+        assertEquals(Optional.empty(), connectionLogStats.getConnectedFromSourceHostInWindow());
     }
 }
