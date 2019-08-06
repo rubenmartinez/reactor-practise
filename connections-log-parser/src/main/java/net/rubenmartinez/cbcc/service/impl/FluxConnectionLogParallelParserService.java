@@ -17,39 +17,32 @@ import javax.inject.Inject;
 import java.nio.file.Path;
 
 @Service("parallel")
-public class FluxConnectionLogParallelParserService implements ConnectionLogParserService {
+public class FluxConnectionLogParallelParserService extends BaseConnectionLogParserService implements ConnectionLogParserService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FluxConnectionLogParallelParserService.class);
 
     @Inject private Options options;
     @Inject private LogLineParser lineParser;
 
-    public Flux<ConnectionLogLine> getConnectionsToHost(Path logFile, String host, long initTimestamp, long endTimestamp) throws LogFileIOException {
-        LOGGER.debug("getConnectionsToHost({}, {}, {}, {})", logFile, host, initTimestamp, endTimestamp);
+    public Flux<ConnectionLogLine> getConnectionsToHost(Path logFile, long fromPosition, String host, long initTimestamp, long endTimestamp) throws LogFileIOException {
+        LOGGER.debug("getConnectionsToHost({}, {}, {}, {}, {})", logFile, fromPosition, host, initTimestamp, endTimestamp);
 
-        long adjustedInitTimestamp = initTimestamp - options.getTimestampOrderToleranceMillis();
-        long adjustedEndTimestamp = endTimestamp + options.getTimestampOrderToleranceMillis();
-
-        LOGGER.debug("getConnectionsToHost: Adjusted timestamps: {} -> {}", adjustedInitTimestamp, adjustedEndTimestamp);
+        long adjustedEndTimestamp = getAdjustedEndTimestamp(endTimestamp);
+        LOGGER.debug("getConnectionsToHost: adjustedEndTimestamp= {}", adjustedEndTimestamp);
 
         Flux<String>[] allPartsFluxArray = FileFlux.splitFileLines(logFile, options.getSplits());
 
-        // Just playing with some schedulers configuration, but probably I haven't found the best one yet
+        // Just playing with some schedulers configuration, but I haven't found a good one yet
         Scheduler scheduler = Schedulers.newParallel("FluxConnectionLogParallelParserService");
-
-        Scheduler scheduler2 = Schedulers.newParallel("FluxConnectionLogParallelParserService-otro");
 
         return Flux.fromArray(allPartsFluxArray)
             .flatMap(filePartFlux -> filePartFlux
                     .subscribeOn(scheduler)
-                    .publishOn(scheduler2)
-                    .filter(line -> !line.isEmpty())
                     .map(lineParser::parseLine)
-                    .onErrorContinue((e, line) -> LOGGER.warn("Ignoring erroneous line: {} (error: {})", line, e.getMessage()))
+                    .onErrorContinue((exception, line) -> LOGGER.warn("Ignoring line: {} (error: {})", line, exception.getMessage()))
                     .takeWhile(connection -> connection.getTimestamp() <= adjustedEndTimestamp)
-                    .filter(connection -> connection.getTimestamp() >= adjustedInitTimestamp && connection.getTargetHost().equals(host)))
-            .doOnComplete(() -> { scheduler.dispose(); scheduler2.dispose(); } );
-
+                    .filter(connection -> filterConnection(connection, host, initTimestamp, endTimestamp)))
+            .doOnComplete(() -> scheduler.dispose());
     }
 
 }

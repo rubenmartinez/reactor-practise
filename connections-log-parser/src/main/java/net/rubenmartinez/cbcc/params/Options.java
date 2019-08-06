@@ -45,6 +45,9 @@ public class Options {
     @Value("${statsWindow:PT1H}")
     private String statsWindow;
 
+    @Value("${presearchTimestamp:false}")
+    private boolean presearchTimestamp;
+
     @Value("${splits:0}")
     private int splits;
 

@@ -1,8 +1,10 @@
 package net.rubenmartinez.cbcc.reactive.file.lines;
 
 
+import net.rubenmartinez.test.util.TestLoggingExtension;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -12,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
@@ -25,11 +26,10 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
+@ExtendWith(TestLoggingExtension.class)
 public class FileLinesHelperTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileLinesHelperTest.class);
-
-    private static final String CHARSET = StandardCharsets.US_ASCII.name();
 
     private File tempFile;
     private FileChannel tempFileChannel;
@@ -182,7 +182,7 @@ public class FileLinesHelperTest {
         FilePositionRange[] filePositionRanges = FileLinesHelper.getSplitPositionsAtLineBoundaries(tempFile.toPath(), splits);
         assertThatPositionRangesCoverEntireFile(filePositionRanges, content.length());
 
-        LOGGER.info("File length: [{}], requested Splits: [{}], final splits: [{}]", content.length(), splits, filePositionRanges.length);
+        LOGGER.info("File length: [{}], requested Splits: [{}], final splits: [{}] (final splits must be less or equal than requested)", content.length(), splits, filePositionRanges.length);
     }
 
     @ParameterizedTest
@@ -201,7 +201,7 @@ public class FileLinesHelperTest {
         FilePositionRange[] filePositionRanges = FileLinesHelper.getSplitPositionsAtLineBoundaries(tempFile.toPath(), splits);
         assertThatPositionRangesCoverEntireFile(filePositionRanges, content.length());
 
-        LOGGER.info("File length: [{}], requested Splits: [{}], final splits: [{}]", content.length(), splits, filePositionRanges.length);
+        LOGGER.info("File length: [{}], requested Splits: [{}], final splits: [{}] (final splits must be less or equal than requested)", content.length(), splits, filePositionRanges.length);
     }
 
     private static void assertThatPositionRangesCoverEntireFile(FilePositionRange[] positionRanges, long fileLength) {

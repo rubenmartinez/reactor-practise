@@ -8,11 +8,10 @@ import net.rubenmartinez.cbcc.service.CommandLineUtilsService;
 import net.rubenmartinez.cbcc.service.ConnectionLogParserService;
 import net.rubenmartinez.cbcc.service.ConnectionLogStatsFormatterService;
 import net.rubenmartinez.cbcc.service.ConnectionLogWatcherService;
+import net.rubenmartinez.cbcc.service.TimestampPositionFinderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.Banner;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import reactor.core.publisher.Flux;
 
@@ -22,8 +21,15 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Using just @ComponentScan instead of @SpringBoot as AutoConfiguration is not really worth for this CommandLineRunner.
+ * There are not many Spring Beans to autoconfigure and this way we save some initialization time.
+ *
+ * Anyway the maven parent project of this project is SpringBoot as it is convenient for the embedded maven shade plugin (jar creation)
+ * and dependency versions compatibilities. It is also useful for testing.
+ */
 @ComponentScan
-public class Main implements CommandLineRunner {
+public class Main {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
@@ -41,20 +47,20 @@ public class Main implements CommandLineRunner {
     @Named("parallel")
     @Inject private ConnectionLogParserService connectionLogParallelFileParser;
 
-    @Inject private Options options;
+    @Inject private TimestampPositionFinderService positionFinderService;
 
+    @Inject private Options options;
 
     public static void main(String[] args) {
         try {
-            SpringApplication app = new SpringApplication(Main.class);
-            app.setBannerMode(Banner.Mode.OFF);
-            app.run(args);
+            var applicationContext = new AnnotationConfigApplicationContext(Main.class);
+            var main = applicationContext.getBean(Main.class);
+            main.run(args);
         } catch (Exception e) {
             showExceptionAndExit(e);
         }
     }
 
-    @Override
     public void run(String... args) {
         var parameters = commandLineUtils.parseCommandLineParameters(args);
 
@@ -65,32 +71,33 @@ public class Main implements CommandLineRunner {
     }
 
     public void runFollowLog(Path logFile, Options options) {
-        Flux<ConnectionLogStats> statsFlux = connectionLogWatcherParser.collectStats(logFile, options.getSourceHost(), options.getTargetHost(), options.getStatsWindowDuration());
+        Flux<ConnectionLogStats> statisticsFlux = connectionLogWatcherParser.collectStats(logFile, options.getSourceHost(), options.getTargetHost(), options.getStatsWindowDuration());
 
         output(String.format("\nOutput stats each %s seconds, watching file [%s] (from now on)\n", options.getStatsWindowDuration().toSeconds(), logFile));
         // This blocks forever but note that the watched file is closed automatically by the files-reactive library on a termination
-        // signal using a Shutdown Hook
-        statsFlux
+        // signal using a Shutdown Hook created directly inside the library
+        statisticsFlux
                 .map(logStatsFormatter::format)
                 .doOnNext(Main::output)
                 .blockLast();
     }
-
 
     public void runParseLog(Path logFile, Options options) {
         checkParseLogParameters(logFile, options);
 
         Flux<ConnectionLogLine> connectionsFlux;
 
-        if (options.getSplits() == 0) {
-            connectionsFlux = connectionLogFileParser.getConnectionsToHost(logFile, options.getTargetHost().get(), options.getInitTimestamp(), options.getEndTimestamp());
-        }
-        else {
-            connectionsFlux = connectionLogParallelFileParser.getConnectionsToHost(logFile, options.getTargetHost().get(), options.getInitTimestamp(), options.getEndTimestamp());
+        long fromPosition = 0;
+        if (options.isPresearchTimestamp()) {
+            fromPosition = positionFinderService.findNearTimestamp(getAdjustedStartTimestamp(options.getInitTimestamp()), logFile);
         }
 
-        // XXX
-        long startTime = System.nanoTime();
+        if (options.getSplits() == 0) {
+            connectionsFlux = connectionLogFileParser.getConnectionsToHost(logFile, fromPosition, options.getTargetHost().get(), options.getInitTimestamp(), options.getEndTimestamp());
+        }
+        else {
+            connectionsFlux = connectionLogParallelFileParser.getConnectionsToHost(logFile, fromPosition, options.getTargetHost().get(), options.getInitTimestamp(), options.getEndTimestamp());
+        }
 
         if (options.isUniqueHosts()) {
             Set<String> uniqueHosts = connectionsFlux.collect(() -> new HashSet<String>(), (set, connection) -> set.add(connection.getSourceHost())).block();
@@ -99,9 +106,7 @@ public class Main implements CommandLineRunner {
         }
         else {
             connectionsFlux
-                .doOnComplete(() -> { long elapsed = System.nanoTime() - startTime; output("------------------\n************** Elapsed: " + elapsed / 1000000);})
-                .subscribe(
-                    connection -> output(connection.getSourceHost() + " at " + connection.getTimestamp())
+                .subscribe(connection -> output(connection.getSourceHost() + " at " + connection.getTimestamp() + " | Thread: " + Thread.currentThread())
             );
         }
     }
@@ -110,6 +115,11 @@ public class Main implements CommandLineRunner {
         if (options.getInitTimestamp() == null || options.getEndTimestamp() == null || options.getTargetHost().isEmpty()) {
             throw new UserInputException("initTimestamp, endTimestamp and targetHost are all required in this mode");
         }
+    }
+
+
+    private long getAdjustedStartTimestamp(long startTimestamp) {
+        return startTimestamp + options.getTimestampOrderToleranceMillis();
     }
 
     private static final void output(String s) {

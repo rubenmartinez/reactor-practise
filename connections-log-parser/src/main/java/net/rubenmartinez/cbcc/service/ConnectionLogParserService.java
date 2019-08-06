@@ -9,5 +9,5 @@ import java.nio.file.Path;
 
 public interface ConnectionLogParserService {
 
-    Flux<ConnectionLogLine> getConnectionsToHost(Path logFile, String host, long initTimestamp, long endTimestamp) throws LogFileIOException, LogParserException;
+    Flux<ConnectionLogLine> getConnectionsToHost(Path logFile, long fromPosition, String host, long initTimestamp, long endTimestamp) throws LogFileIOException, LogParserException;
 }

@@ -40,12 +40,10 @@ import java.util.stream.StreamSupport;
 /**
  * A {@link Reader} that allows reading lines limiting the maximum number of characters read.
  *
- * This is a very drastic solution, modifying JDK11's {@link java.io.BufferedReader} here, but I haven't found any class that made this
- * I could always write my own BufferedReader with this functionality, but JDK's one is already working and very tested, so why not.
+ * This is a very drastic solution, modifying JDK11's {@link java.io.BufferedReader} here, but I haven't found any class or library available for this
+ * I could have always write my own BufferedReader with this functionality, but JDK's one is already working and very tested, so why not just use it?
  *
- * Also this version doesn't use locks for efficiency, so it shouldn't be used by different threads at the same time.
- *
- * It has also other changes in favour of XXX legibility though (simplifications for logic not needed, variable names..) although it is still not quite clean
+ * Also this version remove the use of locks for efficiency, so it shouldn't be used by different threads at the same time.
  */
 
 public class PositionLimitedBufferedLineReader extends BufferedReader {

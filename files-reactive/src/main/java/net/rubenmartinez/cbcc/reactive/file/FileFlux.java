@@ -54,17 +54,24 @@ public final class FileFlux {
     }
 
     /**
+     *
+     * @param path
+     * @return
+     * @throws FileFluxException
      */
     public static Flux<String> lines(Path path) throws FileFluxException {
-        BufferedReader bufferedReader;
+        return lines(path, 0L, Long.MAX_VALUE);
+    }
 
-        try {
-            bufferedReader = Files.newBufferedReader(path, CHARSET);
-        } catch (IOException e) {
-            throw new FileFluxException("Error opening file: " + path);
-        }
-
-        return Flux.create(fluxSink -> emitFileLinesToFluxSink(bufferedReader, fluxSink)); // Note that Flux won't call method emitFileLinesToFluxSink *until* some consumer subscribes to it
+    /**
+     *
+     * @param path
+     * @param fromPosition
+     * @return
+     * @throws FileFluxException
+     */
+    public static Flux<String> lines(Path path, long fromPosition) throws FileFluxException {
+        return lines(path, fromPosition, Long.MAX_VALUE);
     }
 
     /**
@@ -80,20 +87,31 @@ public final class FileFlux {
      * @return
      */
     public static Flux<String> lines(Path path, long fromPosition, long toPosition) {
-        FileChannel fileChannel;
-        try {
-            fileChannel = FileChannel.open(path, StandardOpenOption.READ);
-            fileChannel.position(fromPosition);
-        } catch (IOException e) {
-            throw new FileFluxException("Error opening file [" + path + "] at position: " + fromPosition);
-        }
-        long maxCharsToRead = toPosition - fromPosition;
+        BufferedReader bufferedReader;
 
-        var bufferedReader = new PositionLimitedBufferedLineReader(Channels.newReader(fileChannel, CHARSET), maxCharsToRead);
+        try {
+            if (fromPosition == 0) {
+                bufferedReader = Files.newBufferedReader(path, CHARSET);
+            }
+            else {
+                FileChannel fileChannel;
+                fileChannel = FileChannel.open(path, StandardOpenOption.READ);
+                fileChannel.position(fromPosition);
+
+                if (toPosition < Long.MAX_VALUE) {
+                    bufferedReader = new BufferedReader(Channels.newReader(fileChannel, CHARSET));
+                }
+                else {
+                    long maxCharsToRead = toPosition - fromPosition;
+                    bufferedReader = new PositionLimitedBufferedLineReader(Channels.newReader(fileChannel, CHARSET), maxCharsToRead);
+                }
+            }
+        } catch (IOException e) {
+            throw new FileFluxException(String.format("Error opening file [%s] [from:%s; to:%s] ", path, fromPosition, toPosition), e);
+        }
 
         return Flux.create(fluxSink -> emitFileLinesToFluxSink(bufferedReader, fluxSink)); // Note that Flux won't call method emitFileLinesToFluxSink *until* some consumer subscribes to it
     }
-
 
     private static void emitFileLinesToFluxSink(BufferedReader bufferedReader, FluxSink<String> fluxSink) {
         fluxSink.onDispose(() -> uncheckedExceptionClose(bufferedReader));

@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
     <version>0.0.1</version>
 
-    <name>Clarity - Backend Code Challenge</name>
+    <name>Clarity - Backend Code Exercise</name>
 
     <modules>
         <module>files-reactive</module>

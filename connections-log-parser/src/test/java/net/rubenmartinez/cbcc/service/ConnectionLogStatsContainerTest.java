@@ -1,4 +1,4 @@
-package net.rubenmartinez.cbcc.service.impl;
+package net.rubenmartinez.cbcc.service;
 
 import net.rubenmartinez.cbcc.domain.ConnectionLogLine;
 import net.rubenmartinez.cbcc.logparsing.components.impl.ConnectionLogStatsContainer;

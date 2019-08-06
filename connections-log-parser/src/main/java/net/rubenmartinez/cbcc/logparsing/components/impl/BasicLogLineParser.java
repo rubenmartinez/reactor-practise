@@ -9,10 +9,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class BasicLogLineParser implements LogLineParser {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(BasicLogLineParser.class);
+
     private static final String HOSTS_CONNECTION_LINE_SEPARATOR = " ";
 
     @Override
     public ConnectionLogLine parseLine(String line) {
+
+        //LOGGER.trace("Processing line in Thread [{}]: {}", Thread.currentThread(), line);
+
         String[] items = line.split(HOSTS_CONNECTION_LINE_SEPARATOR);
 
         if (items.length != 3) {

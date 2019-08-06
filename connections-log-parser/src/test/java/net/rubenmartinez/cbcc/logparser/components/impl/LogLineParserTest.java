@@ -1,8 +1,8 @@
 package net.rubenmartinez.cbcc.logparser.components.impl;
 
 import net.rubenmartinez.cbcc.Main;
-import net.rubenmartinez.cbcc.logparsing.components.LogLineParser;
 import net.rubenmartinez.cbcc.domain.ConnectionLogLine;
+import net.rubenmartinez.cbcc.logparsing.components.LogLineParser;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
@@ -41,9 +41,12 @@ class LogLineParserTest {
         String target = "targetHost";
 
         String lineString = timestamp + " " + source + " " + target;
-        ConnectionLogLine expectedLogLine = new ConnectionLogLine(timestamp, source, target);
 
-        assertEquals(expectedLogLine, logLineParser.parseLine(lineString));
+        ConnectionLogLine parsed = logLineParser.parseLine(lineString);
+
+        assertEquals(timestamp, parsed.getTimestamp());
+        assertEquals(source, parsed.getSourceHost());
+        assertEquals(target, parsed.getTargetHost());
     }
 
 }

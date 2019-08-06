@@ -15,6 +15,12 @@ Even if the @SpringBoot annotation (so no @EnableAutoConfiguration) is not used
 There are some utilities from SpringBoot project used: maven plugin (shade plugin can be used for that, but you have it at the same price using springboot)
 
 
+ * Using just @ComponentScan instead of @SpringBoot as AutoConfiguration is not really worth for this CommandLineRunner.
+ * There are not many Spring Beans to autoconfigure and this way we save some initialization time.
+ *
+ * Anyway the maven parent project of this project is SpringBoot as it is convenient for the embedded maven shade plugin (jar creation)
+ * and dependency versions compatibilities. It is also useful for testing.
+
 
 Flux has a very rich / expressive [][]
 
@@ -106,6 +112,49 @@ They are very different fwks, but they both can process huge amount of dataa . c
 
 
 
+### Results
+
+
+2.8Gb (~ 100M lines)
+28Gb (~ 1000M lines)
+
+Note the elapsed time is measured from outside the application, so it includes all Java Virtual Machine initialization time, and Spring initialization time.
+
+splits==0
+37.15user 1.37system 0:34.87elapsed 110%CPU (0avgtext+0avgdata 526028maxresident)k
+
+splits==1 (that means using the split and parallel login, but only one part and one thread anyway)
+42.42user 1.66system 0:41.40elapsed 106%CPU (0avgtext+0avgdata 435800maxresident)k
+
+splits==2
+45.94user 1.55system 0:22.74elapsed 208%CPU (0avgtext+0avgdata 588328maxresident)k
+
+splits==3
+66.98user 1.85system 0:29.94elapsed 229%CPU (0avgtext+0avgdata 889068maxresident)k
+
+splits=0
+************** Elapsed: 361394
+336.30user 18.15system 6:03.18elapsed 97%CPU (0avgtext+0avgdata 590188maxresident)k
+
+What is worse, with a file of 28Gb I surprisingly an OutOfMemory error.
+
+
+
+splits=2
+
+Probably the wrong approach, but it was worth to try.
+
+Flux disappointed, Stream slightly better
+
+My hypothesis SSD
+
+In a file (around with 100 million lines 
+
+splitting the file in 2
+
+However in smaller files, splitting the filw was actually slower
+
+/home/rmartinez/tmp/ClarityTemp/input-file-100010000.txt
 
 
 
@@ -117,7 +166,6 @@ It is a library, so it tries to minimize dependencies used, and of course it doe
 
 
 **An optimization could do a binary search, to try to find , but no time to do this on**
-
 
 
 

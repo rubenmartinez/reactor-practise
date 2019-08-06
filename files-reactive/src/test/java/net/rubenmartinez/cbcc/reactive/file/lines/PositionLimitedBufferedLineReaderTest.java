@@ -1,8 +1,10 @@
 package net.rubenmartinez.cbcc.reactive.file.lines;
 
 
+import net.rubenmartinez.test.util.TestLoggingExtension;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
@@ -24,6 +26,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 
+@ExtendWith(TestLoggingExtension.class)
 public class PositionLimitedBufferedLineReaderTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PositionLimitedBufferedLineReaderTest.class);

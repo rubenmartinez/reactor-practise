@@ -32,7 +32,7 @@ public class FluxConnectionLogWatcherService implements ConnectionLogWatcherServ
 
         return FileFlux.follow(logFile, true)
                 .map(lineParser::parseLine)
-                .onErrorContinue((e, line) -> LOGGER.warn("Ignoring erroneous line: {} (error: {})", line, e.getMessage()))
+                .onErrorContinue((exception, line) -> LOGGER.warn("Ignoring line: {} (error: {})", line, exception.getMessage()))
                 .window(windowDuration)
                 .flatMapSequential(windowFlux -> collectStatsForWindow(windowFlux, sourceHost, targetHost, windowDuration))
                 .map(ConnectionLogStatsContainer::getConnectionLogStats);

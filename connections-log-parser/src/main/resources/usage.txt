@@ -11,6 +11,8 @@ logparser follow /tmp/test-file.log --targetHost=asdasd --
 Mode: follow
     asdfasdfasdfhoaisudhfaiosduf
 
+    --statsWindow=<ISO Period>:
+
 
 Mode: parse
     asdfasdfasdfhoaisudhfaiosduf
@@ -20,7 +22,7 @@ Mode: parse
     --endDateTime  | --endTimestamp:  [Mandatory]
 
     --uniqueHosts=<true|false>: When true, only a list of unique hosts connected to the specified targetHost is shown. This is slower and requires more memory, specially if there are a huge number of different hosts. When false a list of sourceHosts and timestamps are shown. Default to false.
-    --splits=n: When n>0 the log file is split in n slices and, by experience n>3 doesn't provide much benefit, but n==2 could reduce parsing time. Defaults to 0.
-    --prefind-times=<true|false>. Default to false.
+    --splits=n: EXPERIMENTAL When n>0 the log file is split in n slices and, by experience n>3 doesn't provide much benefit, but n==2 could reduce parsing time. Defaults to 0.
+    --presearchTimestamp=<true|false>. EXPERIMENTAL. Default to false.
 
 
