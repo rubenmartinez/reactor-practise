@@ -99,7 +99,7 @@ public class Main implements CommandLineRunner {
             connectionsFlux = connectionLogFileParser.getConnectionsToHost(logFile, fromPosition, options.getTargetHost().get(), options.getInitTimestamp(), options.getEndTimestamp());
         }
         else {
-            output("Warn: --splits it is just a experimental feature just to do some tests, but it is not recommended");
+            output("Warn: --splits it is a experimental feature, it could misbehave in some situations");
             connectionsFlux = connectionLogParallelFileParser.getConnectionsToHost(logFile, fromPosition, options.getTargetHost().get(), options.getInitTimestamp(), options.getEndTimestamp());
         }
 
@@ -110,7 +110,7 @@ public class Main implements CommandLineRunner {
         }
         else {
             connectionsFlux
-                .subscribe(connection -> output(connection.getSourceHost() + " at " + connection.getTimestamp() + " | Thread: " + Thread.currentThread()) // XXX XXX
+                .subscribe(connection -> output(connection.getSourceHost() + " at " + connection.getTimestamp())
             );
         }
     }

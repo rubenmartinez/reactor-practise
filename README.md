@@ -4,13 +4,12 @@
 
 ## Run
 
-A .jar is provided directly in the .tgz package so the application can be executed right away. For
+A .jar is provided directly in the .tgz package so the application can be executed right away.
 
-In this page, the command `logparser` will refer to the main executable, equivalent to:
+A convenience script has been also included in the tgz file called also `logparser` for Linux shells, that is the equivalent to:
 
-`java -jar target/connections-log-parser-0.0.1.jar`
+`java -jar connections-log-parser-0.0.1.jar`
 
-(A convenience script has been included in the tgz file called also `logparser` in the package for Linux shells).
 
 The executable has two working modes, corresponding with the two goals in the exercise: `parse` and `follow`:
 
@@ -21,7 +20,7 @@ Note all options must be preceded with double hyphen '--' and must be separated 
 Note also that the mandatory parameters mode and logfile must be written in the command line always as the first two parameters, and the options must follow later.
 
 Examples:
-./logparser follow /tmp/input.log --targetHost=Zyrell --sourceHost=Dariya --statsWindow=P1H
+./logparser follow /tmp/input.log --targetHost=Zyrell --sourceHost=Dariya --statsWindow=PT1H
 ./logparser parse /tmp/input.log --initTimestamp=10000995 --endTimestamp=10000000000 --targetHost=Zyrell
 ./logparser parse /tmp/input.log --initDateTime=2019-01-01T00:00:00Z --endDateTime=2019-09-01T00:00:00Z --targetHost=Zyrell
 
@@ -45,17 +44,6 @@ Examples:
     --sourceHost=<host name>: Optional. If present the stats will show all target hosts connected from this sourceHost in the specified window
     --targetHost=<host name>: Optional. If present the stats will show all source hosts connected to this targetHost in the specified window
 
-
-* Log file path:
-
-A file with lines in this format:
-
-1565647204351 Aadvik Matina
-1565647205599 Keimy Dmetri
-1565647212986 Tyreonna Rehgan
-1565647228897 Heera Eron
-1565647246869 Jeremyah Morrigan
-1565647247170 Khiem Tailee
 ```
 
 ## Build
@@ -64,197 +52,66 @@ Java 11 and Maven 3 is required to build the application (Tested with maven 3.6.
 
 [Lombok](https://projectlombok.org/) is used in this project, so when using an IDE to review the source code please install it first in case you haven't already (in IntelliJ Idea it is just a matter of [adding a plugin](https://projectlombok.org/setup/intellij))
 
-Then as usual
+then, as usual:
 ```
 mvn -U clean package
 ```
 
-
-
-
-I used this p
-
-For this task, I would normally use (eg. Spark, or Kafka File Connector + Kafka + Spark, or Apache Druid, etc.), but this would be an over
-
-Anyway, I still built a small using, just as a reference implementation to compare my solution to XXX
-
-
-Tables times
-
-
 ## Design
 
-Even if the @SpringBoot annotation (so no @EnableAutoConfiguration) is not used
+### Alternatives Considered
 
-There are some utilities from SpringBoot project used: maven plugin (shade plugin can be used for that, but you have it at the same price using springboot)
-
-
- * Using just @ComponentScan instead of @SpringBoot as AutoConfiguration is not really worth for this CommandLineRunner.
- * There are not many Spring Beans to autoconfigure and this way we save some initialization time.
- *
- * Anyway the maven parent project of this project is SpringBoot as it is convenient for the embedded maven shade plugin (jar creation)
- * and dependency versions compatibilities. It is also useful for testing.
+* **Spark**: Even if I am not an expert in Spark, it seems the natural choice for this task. It allows processing of huge files efficiently. However I supposed the exercise objective was to evaluate my programming style, and a Spark job would have not showing it.  
+* **Kafka**: Similar to Spark, it has connectors to watch changes on a file then processing them (now using even KSQL some of the objectives of the exercise could have been fulfilled without even programming). I discarded it for the same reason as Spark. 
 
 
-Flux has a very rich / expressive [][]
+### Structure
 
-a Flux is basically a Publisher, quite similar to Java 8 Streams in the sense that it has ...
+The code compiles to an assembled (über) jar that can be executed from the command line. The executable is a Spring Boot Application, although the code is organized in two different modules:
 
-This is specially useful for the second part of the exercise, when the application has to react to some event (a new line written in the watched log file). Using the Java 8 Stream API is not so straightforward, as it is the 'client' of the Streams who *pulls* for new content, requiring some kind of blocking. 
+* **files-reactive**: A library that can "convert" Files to a [Project Reactor](https://projectreactor.io/)'s [Flux](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Flux.html) of lines, for full files or just fragments of files.  
+* **connections-log-parser**: The SpringBoot application that uses the files-reactive library. 
 
-For more information, it is a tricky concept to get
+The main pom.xml file builds the two modules.
 
-SpringBoot used for, but not for AutoConfiguration
-
-
-library
-
-At the beginning SpringBoot application, but just for a command line not.. so
-
-
-
-
-
-### Module: connections-log-parser
-
-### Module: files-reactive
-
-This is a library that makes all the work to read lines of a file
-
-I also thought
-
-
-
-
-
-
-### Alternatives considered
-
-#### Kafka
-
-Requires a kafka cluster
-
-#### Spark
-
-They are very different fwks, but they both can process huge amount of dataa . can read, I don't know this at practical level and as I assumed t, I didn't explore this option much
-
-
-#### Quarkus+GraalVM. In the end I didn't have much time to explore this option. 
-
-
+Note: I would have liked to provide more unit tests and javadoc in the modules, and in a normal enterprise application I would have done so. But I didn't really have more time for the project
+so I hope the tests and javadoc already included are enough as a sample.
 
 ### Results
 
+(Tests performed in a mid-range laptop)
 
-200Mb 18M lines-->
-9.73user 0.43system 0:06.56elapsed 154%CPU (0avgtext+0avgdata 536820maxresident)k
-4.67user 0.24system 0:01.87elapsed 262%CPU (0avgtext+0avgdata 176104maxresident)k
+#### presearchTimestamp
 
-28Gb (~ 1000M lines)
+Using `--presearchTimestamp` can *dramatically* reduce execution times, assuming the timestamp range requested is small compared with the size of the file.
 
-4.62user 0.23system 0:02.30elapsed 210%CPU (0avgtext+0avgdata 182716maxresident)k
+As the time spent on the presearch itself is negligible, the feature is activated by default although it can be deactivated with the flag `--presearchTimestamp==false` (for small files, or for big files when all the file must be read anyway)
 
+|presearchTimestamp?| # Lines | size | Time | 
+|---|---|---|---|
+|false|2 Million|200Mb|0:06.56s|
+|true|2 Million|200Mb|**0:01.87s**|
+|false|1000 Million|28Gb|6:21.85s|
+|true|1000 Million|28Gb|**0:02.30s**|
 
+Of course in this examples the timestamp range was very small, so they execution times could gain the most benefit from activating the feature
 
-2.8Gb (~ 100M lines)
-28Gb (~ 1000M lines)
+#### split
 
-Note the elapsed time is measured from outside the application, so it includes all Java Virtual Machine initialization time, and Spring initialization time.
+On the contrary, using `--split` to process the file using several threads in parallel showed disappointed results. The theory was that on *SSD disks* with almost random access there was no penalty open multiple pointers to the same file in different locations,
+but the tests showed the contrary: 
 
-splits==0
-37.15user 1.37system 0:34.87elapsed 110%CPU (0avgtext+0avgdata 526028maxresident)k
+|split?| # Lines | size | Time | Resources | 
+|---|---|---|---|---|
+|No Split  |100 Million|2.8Gb|0:35.39s|37.45user 1.51system 110%CPU (514324maxresident)k|
+|--split==2|100 Million|2.8Gb|0:20.7s|41.54user 1.16system 206%CPU (632016maxresident)k|
+|--split==3|100 Million|2.8Gb|0:28.04s|70.39user 1.42system 256%CPU (635712maxresident)k|
+|No Split  |1000 Million|28Gb|6:21.85m|359.10user 16.86system 98%CPU (523132maxresident)k|
+|--split==2|1000 Million|28Gb|4:02.39m|448.01user 16.80system 188%CPU (574780maxresident)k|
+|--split==3|1000 Million|28Gb|4:06.19m|564.46user 19.40system 240%CPU (645716maxresident)k|
 
-splits==1 (that means using the split and parallel login, but only one part and one thread anyway)
-42.42user 1.66system 0:41.40elapsed 106%CPU (0avgtext+0avgdata 435800maxresident)k
+However, as far as I know, Spark (as I said I am not an expert) can process files in parallel in an scalable way so most probably I am missing something and would need to continue investigating.
 
-splits==2
-45.94user 1.55system 0:22.74elapsed 208%CPU (0avgtext+0avgdata 588328maxresident)k
+In smaller files, the parallel version was even worse than the sequential, but that was expected.
 
-splits==3
-66.98user 1.85system 0:29.94elapsed 229%CPU (0avgtext+0avgdata 889068maxresident)k
-
-splits=0
-************** Elapsed: 361394
-336.30user 18.15system 6:03.18elapsed 97%CPU (0avgtext+0avgdata 590188maxresident)k
-
-What is worse, with a file of 28Gb I surprisingly an OutOfMemory error.
-
-
-
-splits=2
-
-Probably the wrong approach, but it was worth to try.
-
-Flux disappointed, Stream slightly better
-
-My hypothesis SSD
-
-In a file (around with 100 million lines 
-
-splitting the file in 2
-
-However in smaller files, splitting the filw was actually slower
-
-/home/rmartinez/tmp/ClarityTemp/input-file-100010000.txt
-
-
-
-### Modules
-
-#### file-lines-streamer
-
-It is a library, so it tries to minimize dependencies used, and of course it does not use any big framework such as Spring. Actually the only dependencies are reactor-core and sl4j
-
-
-**An optimization could do a binary search, to try to find , but no time to do this on**
-
-
-
-
-
-## Modes
-
-### Binary Search
-
-This 
-
-
-### Solution comparison
-
-Startup time
-10k lines file
-100k lines file
-1M lines file
-
-
-## Testing
-
-
-## Requirements
-
-The project has been built using the following versions:
-
-- Maven 3.
-- JDK 12 
-
-
-
-
-
-## Try CommonMark
-
-You can try CommonMark here.  This dingus is powered by [commonmark.js](https://github.com/jgm/commonmark.js), the JavaScript reference implementation.
-
-1. item one
-2. item two
-   - sublist
-   - sublist
-
-this is a code block
-	block
-	block
-
-
-
-
-
+With big/huge files, using --split=2 could improve times up to a 40%, but using a number of splits > 3 only increased resources without any benefit. 

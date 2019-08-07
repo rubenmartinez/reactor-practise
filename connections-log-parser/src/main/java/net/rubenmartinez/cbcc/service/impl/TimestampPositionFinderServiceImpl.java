@@ -35,6 +35,7 @@ public class TimestampPositionFinderServiceImpl implements TimestampPositionFind
     @Inject LogLineParser logLineParser;
 
     /**
+     * Tries to find a line (actually the byte position that starts at a line) closer to a given timestamp in a log file than the beginning of the file
      *
      * Note the position returned could be at a line termination, so the client must be able to ignore empty lines at the returned position
      *
@@ -56,13 +57,13 @@ public class TimestampPositionFinderServiceImpl implements TimestampPositionFind
 
             long lowerBoundPosition = 0;
             long upperBoundPosition = fileLength;
-            long currentPosition = 0;
+            long currentPosition;
 
             int loops = 0;
 
             while (((upperBoundPosition - lowerBoundPosition) > MINIMUM_FRAGMENT_SIZE) ) {
 
-                // binary search
+                // Just a binary search
                 currentPosition = (upperBoundPosition - lowerBoundPosition) / 2 + lowerBoundPosition;
                 fileChannel.position(currentPosition);
 

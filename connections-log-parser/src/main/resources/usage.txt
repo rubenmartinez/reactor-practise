@@ -6,7 +6,7 @@ Note all options must be preceded with double hyphen '--' and must be separated 
 Note also that the mandatory parameters mode and logfile must be written in the command line always as the first two parameters, and the options must follow later.
 
 Examples:
-./logparser follow /tmp/input.log --targetHost=Zyrell --sourceHost=Dariya --statsWindow=P1H
+./logparser follow /tmp/input.log --targetHost=Zyrell --sourceHost=Dariya --statsWindow=PT1H
 ./logparser parse /tmp/input.log --initTimestamp=10000995 --endTimestamp=10000000000 --targetHost=Zyrell
 ./logparser parse /tmp/input.log --initDateTime=2019-01-01T00:00:00Z --endDateTime=2019-09-01T00:00:00Z --targetHost=Zyrell
 
