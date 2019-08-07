@@ -1,4 +1,78 @@
-## Introduction
+
+
+# Clarity - Backend Code Challenge
+
+## Run
+
+A .jar is provided directly in the .tgz package so the application can be executed right away. For
+
+In this page, the command `logparser` will refer to the main executable, equivalent to:
+
+`java -jar target/connections-log-parser-0.0.1.jar`
+
+(A convenience script has been included in the tgz file called also `logparser` in the package for Linux shells).
+
+The executable has two working modes, corresponding with the two goals in the exercise: `parse` and `follow`:
+
+```
+Usage: logparser <mode=parse|follow> <log file path> [options]
+
+Note all options must be preceded with double hyphen '--' and must be separated from their value by an equals sign '=' without any space, eg. --uniqueNames=true
+Note also that the mandatory parameters mode and logfile must be written in the command line always as the first two parameters, and the options must follow later.
+
+Examples:
+./logparser follow /tmp/input.log --targetHost=Zyrell --sourceHost=Dariya --statsWindow=P1H
+./logparser parse /tmp/input.log --initTimestamp=10000995 --endTimestamp=10000000000 --targetHost=Zyrell
+./logparser parse /tmp/input.log --initDateTime=2019-01-01T00:00:00Z --endDateTime=2019-09-01T00:00:00Z --targetHost=Zyrell
+
+* Mode: parse
+    Shows all sourceHosts connected to a given --targetHost between an --initDateTime and an --endDateTime
+
+    --uniqueHosts=<true|false>: Defaults to false. When true, only a list of unique hosts connected to the specified targetHost is shown. This is slower and requires more memory, specially if there are a huge number of different hosts. When false a list of sourceHosts and timestamps are shown.
+    --presearchTimestamp=<true|false>. Experimental. It showed very good results during the tests so it defaults to true.
+    --splits=n: Experimental. When n>0 the log file is split in n slices and, by experience n>3 doesn't provide much benefit, but n==2 could reduce parsing time in big files. Defaults to 0. n==1 means using parallel logic but not actually
+
+    --targetHost=<hostName> [Mandatory] The target host
+    --initDateTime | --initTimestamp: [Mandatory]  unix timestamp or ISO 8601 Zoned Date time
+    --endDateTime  | --endTimestamp:  [Mandatory]
+
+
+* Mode: follow
+    Opens a file and keeps watching for *new* lines added, showing stats every --statsWindow seconds.
+    If the file doesn't exist a new empty file will be created.
+
+    --statsWindow=<ISO Period>: Optional, defines the window to collect stats. Defaults to 10 seconds.
+    --sourceHost=<host name>: Optional. If present the stats will show all target hosts connected from this sourceHost in the specified window
+    --targetHost=<host name>: Optional. If present the stats will show all source hosts connected to this targetHost in the specified window
+
+
+* Log file path:
+
+A file with lines in this format:
+
+1565647204351 Aadvik Matina
+1565647205599 Keimy Dmetri
+1565647212986 Tyreonna Rehgan
+1565647228897 Heera Eron
+1565647246869 Jeremyah Morrigan
+1565647247170 Khiem Tailee
+```
+
+## Build
+
+Java 11 and Maven 3 is required to build the application (Tested with maven 3.6.0)
+
+[Lombok](https://projectlombok.org/) is used in this project, so when using an IDE to review the source code please install it first in case you haven't already (in IntelliJ Idea it is just a matter of [adding a plugin](https://projectlombok.org/setup/intellij))
+
+Then as usual
+```
+mvn -U clean package
+```
+
+
+
+
+I used this p
 
 For this task, I would normally use (eg. Spark, or Kafka File Connector + Kafka + Spark, or Apache Druid, etc.), but this would be an over
 
@@ -51,49 +125,6 @@ I also thought
 
 
 
-## Build
-
-Java 11 is required, and maven (tested with )
-
-[Lombok](https://projectlombok.org/) is used in this project, so when using an IDE to review the source code please install it first in case you haven't already (in IntelliJ Idea it is just a matter of [adding a plugin](https://projectlombok.org/setup/intellij))
-
-
-
-## Run
-
-From now on, in this page, the command `logparser` will refer to the main executable, ie. equivalent:
-
-`java -jar target/connections-log-parser-0.0.1.jar`
-
-A convenience script has been included in the tgz file called `connections-log-parser` for Linux shells.
-  
-
-2 modes:
-
-`connections-log-parser [--unique] <HostName> <InitDateTime> <EndDateTime>`
- 
-`log-parser-exercise --follow [--window=P1H] <HostName>`
-
-initDateTime and endDateTime must be in ISO
-window must be, it is an optional parameter, defaults to 1 hour
-
-- --unique: implies storing in memory the hosts already seen, so in case of many different hosts the memory consumption will increase. If this option is given, the order of hosts is not ensured
-
-`java -jar target/log-parser-spring-boot-0.0.1.jar [--follow] [Host] [initDateTime] `
-
-When using the "--follow"
-
-### Examples:
-
-- Get all connections to 
-
-`log-parser-exercise `
-
-- Get all connections to 
-
-`log-parser-exercise --follow `
-
-
 
 
 
@@ -113,6 +144,16 @@ They are very different fwks, but they both can process huge amount of dataa . c
 
 
 ### Results
+
+
+200Mb 18M lines-->
+9.73user 0.43system 0:06.56elapsed 154%CPU (0avgtext+0avgdata 536820maxresident)k
+4.67user 0.24system 0:01.87elapsed 262%CPU (0avgtext+0avgdata 176104maxresident)k
+
+28Gb (~ 1000M lines)
+
+4.62user 0.23system 0:02.30elapsed 210%CPU (0avgtext+0avgdata 182716maxresident)k
+
 
 
 2.8Gb (~ 100M lines)

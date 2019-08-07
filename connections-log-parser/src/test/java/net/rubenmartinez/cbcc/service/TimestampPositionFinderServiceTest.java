@@ -21,6 +21,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.Random;
 import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -129,13 +130,13 @@ class TimestampPositionFinderServiceTest {
 
 
         long lastPosition = 0;
-        //for(long i=1000; i<NUM_LINES; i+=new Random().nextInt(10)) { // Random steps between 0-500 otherwise this test would take ages
-        for(long i=1000; i<NUM_LINES; i++) {
+        for(long i=1000; i<NUM_LINES; i+=new Random().nextInt(1000)) { // Random steps between 0-1000 otherwise this test would take ages
             long position = timestampPositionFinder.findNearTimestamp(i, tempFile.toPath());
             assertThat(position, greaterThanOrEqualTo(lastPosition));
 
             tempFileChannel.position(position);
             String lineAtPosition = getNextLineNonEmpty(tempFileChannel);
+
             LOGGER.info("Searching for ts [{}] returned line at position [{}]: {}", i, position, lineAtPosition);
 
             var connectionLogLine = lineParser.parseLine(lineAtPosition);

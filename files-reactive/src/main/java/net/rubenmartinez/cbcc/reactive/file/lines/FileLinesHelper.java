@@ -26,9 +26,12 @@ public class FileLinesHelper {
     }
 
     public static FilePositionRange[] getSplitPositionsAtLineBoundaries(Path path, int splits) {
-        return getSplitPositionsAtLineBoundaries(path, splits, 0, -1);
+        return getSplitPositionsAtLineBoundaries(path, splits, 0);
     }
 
+    public static FilePositionRange[] getSplitPositionsAtLineBoundaries(Path path, int splits, long startPosition) {
+        return getSplitPositionsAtLineBoundaries(path, splits, startPosition, Long.MAX_VALUE);
+    }
 
     /**
      *
@@ -49,7 +52,7 @@ public class FileLinesHelper {
 
             var filePositionRangeList = new ArrayList<FilePositionRange>(splits); // Initial size estimation, but final size could be shrunk (see internal javadoc above)
 
-            if (endPosition == -1) {
+            if (endPosition == Long.MAX_VALUE) {
                 endPosition = randomAccessFile.length();
             }
 

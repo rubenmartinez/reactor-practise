@@ -19,7 +19,6 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.stream.Stream;
@@ -87,28 +86,30 @@ public final class FileFlux {
      * @return
      */
     public static Flux<String> lines(Path path, long fromPosition, long toPosition) {
+        LOGGER.debug("lines({}, from={}, to={})", path, fromPosition, toPosition);
+
         BufferedReader bufferedReader;
 
         try {
-            if (fromPosition == 0) {
-                bufferedReader = Files.newBufferedReader(path, CHARSET);
+            FileChannel fileChannel;
+            fileChannel = FileChannel.open(path, StandardOpenOption.READ);
+            if (fromPosition > 0) {
+                fileChannel.position(fromPosition);
+            }
+
+            if (toPosition >= fileChannel.size()) {
+                bufferedReader = new BufferedReader(Channels.newReader(fileChannel, CHARSET));
+                LOGGER.debug("bufferedReader [{}] from: [{}] at Thread: {}", bufferedReader, fromPosition, toPosition, Thread.currentThread());
             }
             else {
-                FileChannel fileChannel;
-                fileChannel = FileChannel.open(path, StandardOpenOption.READ);
-                fileChannel.position(fromPosition);
-
-                if (toPosition < Long.MAX_VALUE) {
-                    bufferedReader = new BufferedReader(Channels.newReader(fileChannel, CHARSET));
-                }
-                else {
-                    long maxCharsToRead = toPosition - fromPosition;
-                    bufferedReader = new PositionLimitedBufferedLineReader(Channels.newReader(fileChannel, CHARSET), maxCharsToRead);
-                }
+                long maxCharsToRead = toPosition - fromPosition;
+                bufferedReader = new PositionLimitedBufferedLineReader(Channels.newReader(fileChannel, CHARSET), maxCharsToRead);
+                LOGGER.debug("bufferedReader [{}] from: [{}] to: [{}] at Thread: {}", bufferedReader, fromPosition, maxCharsToRead, Thread.currentThread());
             }
         } catch (IOException e) {
             throw new FileFluxException(String.format("Error opening file [%s] [from:%s; to:%s] ", path, fromPosition, toPosition), e);
         }
+
 
         return Flux.create(fluxSink -> emitFileLinesToFluxSink(bufferedReader, fluxSink)); // Note that Flux won't call method emitFileLinesToFluxSink *until* some consumer subscribes to it
     }
@@ -139,7 +140,19 @@ public final class FileFlux {
      * @return array of {@link Flux}, each Flux represent a 'stream' of lines for each split of the file
      */
     public static Flux<String>[] splitFileLines(Path path, int splits) {
-        var positionRanges = FileLinesHelper.getSplitPositionsAtLineBoundaries(path, splits);
+        return splitFileLines(path, splits, 0L);
+    }
+
+    /**
+     * XXX
+     * Lines splitting file for parallel processing
+     *
+     * @param path
+     * @param splits
+     * @return array of {@link Flux}, each Flux represent a 'stream' of lines for each split of the file
+     */
+    public static Flux<String>[] splitFileLines(Path path, int splits, long fromPosition) {
+        var positionRanges = FileLinesHelper.getSplitPositionsAtLineBoundaries(path, splits, fromPosition);
         var splitFileLinesFluxArray = new Flux[splits];
 
         for (int i=0; i<positionRanges.length; i++) {

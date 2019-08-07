@@ -30,7 +30,7 @@ public class FluxConnectionLogParallelParserService extends BaseConnectionLogPar
         long adjustedEndTimestamp = getAdjustedEndTimestamp(endTimestamp);
         LOGGER.debug("getConnectionsToHost: adjustedEndTimestamp= {}", adjustedEndTimestamp);
 
-        Flux<String>[] allPartsFluxArray = FileFlux.splitFileLines(logFile, options.getSplits());
+        Flux<String>[] allPartsFluxArray = FileFlux.splitFileLines(logFile, options.getSplits(), fromPosition);
 
         // Just playing with some schedulers configuration, but I haven't found a good one yet
         Scheduler scheduler = Schedulers.newParallel("FluxConnectionLogParallelParserService");

@@ -11,7 +11,9 @@ import net.rubenmartinez.cbcc.service.ConnectionLogWatcherService;
 import net.rubenmartinez.cbcc.service.TimestampPositionFinderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.boot.Banner;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
 import org.springframework.context.annotation.ComponentScan;
 import reactor.core.publisher.Flux;
 
@@ -25,11 +27,11 @@ import java.util.Set;
  * Using just @ComponentScan instead of @SpringBoot as AutoConfiguration is not really worth for this CommandLineRunner.
  * There are not many Spring Beans to autoconfigure and this way we save some initialization time.
  *
- * Anyway the maven parent project of this project is SpringBoot as it is convenient for the embedded maven shade plugin (jar creation)
- * and dependency versions compatibilities. It is also useful for testing.
+ * SpringBoot is used anyway, for command line parameters and as the maven parent project of this project it is convenient
+ * for the embedded maven shade plugin (jar creation) and dependency versions compatibilities. It is also useful for testing.
  */
 @ComponentScan
-public class Main {
+public class Main implements CommandLineRunner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
@@ -53,9 +55,9 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            var applicationContext = new AnnotationConfigApplicationContext(Main.class);
-            var main = applicationContext.getBean(Main.class);
-            main.run(args);
+            SpringApplication app = new SpringApplication(Main.class);
+            app.setBannerMode(Banner.Mode.OFF);
+            app.run(args);
         } catch (Exception e) {
             showExceptionAndExit(e);
         }
@@ -90,12 +92,14 @@ public class Main {
         long fromPosition = 0;
         if (options.isPresearchTimestamp()) {
             fromPosition = positionFinderService.findNearTimestamp(getAdjustedStartTimestamp(options.getInitTimestamp()), logFile);
+            output("Starting at position: " + fromPosition);
         }
 
         if (options.getSplits() == 0) {
             connectionsFlux = connectionLogFileParser.getConnectionsToHost(logFile, fromPosition, options.getTargetHost().get(), options.getInitTimestamp(), options.getEndTimestamp());
         }
         else {
+            output("Warn: --splits it is just a experimental feature just to do some tests, but it is not recommended");
             connectionsFlux = connectionLogParallelFileParser.getConnectionsToHost(logFile, fromPosition, options.getTargetHost().get(), options.getInitTimestamp(), options.getEndTimestamp());
         }
 
@@ -106,7 +110,7 @@ public class Main {
         }
         else {
             connectionsFlux
-                .subscribe(connection -> output(connection.getSourceHost() + " at " + connection.getTimestamp() + " | Thread: " + Thread.currentThread())
+                .subscribe(connection -> output(connection.getSourceHost() + " at " + connection.getTimestamp() + " | Thread: " + Thread.currentThread()) // XXX XXX
             );
         }
     }

@@ -27,7 +27,7 @@ public class FluxConnectionLogParserService extends BaseConnectionLogParserServi
         long adjustedEndTimestamp = getAdjustedEndTimestamp(endTimestamp);
         LOGGER.debug("getConnectionsToHost: adjustedEndTimestamp= {}", adjustedEndTimestamp);
 
-        return FileFlux.lines(logFile)
+        return FileFlux.lines(logFile, fromPosition)
                 .map(lineParser::parseLine)
                 .onErrorContinue((exception, line) -> LOGGER.warn("Ignoring line: {} (error: {})", line, exception.getMessage()))
                 .takeWhile(connection -> connection.getTimestamp() <= adjustedEndTimestamp)

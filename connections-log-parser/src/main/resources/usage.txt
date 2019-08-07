@@ -1,28 +1,43 @@
 logparser - Clarity.ai Exercise
 
-Usage: logparser <parse|follow> <log file> [options]
+Usage: logparser <mode=parse|follow> <log file path> [options]
 
 Note all options must be preceded with double hyphen '--' and must be separated from their value by an equals sign '=' without any space, eg. --uniqueNames=true
-Note also that all options must be written in the command line after the mandatory parameters
+Note also that the mandatory parameters mode and logfile must be written in the command line always as the first two parameters, and the options must follow later.
 
-eg.
-logparser follow /tmp/test-file.log --targetHost=asdasd --
+Examples:
+./logparser follow /tmp/input.log --targetHost=Zyrell --sourceHost=Dariya --statsWindow=P1H
+./logparser parse /tmp/input.log --initTimestamp=10000995 --endTimestamp=10000000000 --targetHost=Zyrell
+./logparser parse /tmp/input.log --initDateTime=2019-01-01T00:00:00Z --endDateTime=2019-09-01T00:00:00Z --targetHost=Zyrell
 
-Mode: follow
-    asdfasdfasdfhoaisudhfaiosduf
+* Mode: parse
+    Shows all sourceHosts connected to a given --targetHost between an --initDateTime and an --endDateTime
 
-    --statsWindow=<ISO Period>:
+    --uniqueHosts=<true|false>: Defaults to false. When true, only a list of unique hosts connected to the specified targetHost is shown. This is slower and requires more memory, specially if there are a huge number of different hosts. When false a list of sourceHosts and timestamps are shown.
+    --presearchTimestamp=<true|false>. Experimental. It showed very good results during the tests so it defaults to true.
+    --splits=n: Experimental. When n>0 the log file is split in n slices and, by experience n>3 doesn't provide much benefit, but n==2 could reduce parsing time in big files. Defaults to 0. n==1 means using parallel logic but not actually
 
-
-Mode: parse
-    asdfasdfasdfhoaisudhfaiosduf
-
-    --targetHost=<hostName> [Mandatory]
-    --initDateTime | --initTimestamp: [Mandatory]
+    --targetHost=<hostName> [Mandatory] The target host
+    --initDateTime | --initTimestamp: [Mandatory]  unix timestamp or ISO 8601 Zoned Date time
     --endDateTime  | --endTimestamp:  [Mandatory]
 
-    --uniqueHosts=<true|false>: When true, only a list of unique hosts connected to the specified targetHost is shown. This is slower and requires more memory, specially if there are a huge number of different hosts. When false a list of sourceHosts and timestamps are shown. Default to false.
-    --splits=n: EXPERIMENTAL When n>0 the log file is split in n slices and, by experience n>3 doesn't provide much benefit, but n==2 could reduce parsing time. Defaults to 0.
-    --presearchTimestamp=<true|false>. EXPERIMENTAL. Default to false.
+
+* Mode: follow
+    Opens a file and keeps watching for *new* lines added, showing stats every --statsWindow seconds.
+    If the file doesn't exist a new empty file will be created.
+
+    --statsWindow=<ISO Period>: Optional, defines the window to collect stats. Defaults to 10 seconds.
+    --sourceHost=<host name>: Optional. If present the stats will show all target hosts connected from this sourceHost in the specified window
+    --targetHost=<host name>: Optional. If present the stats will show all source hosts connected to this targetHost in the specified window
 
 
+* Log file path:
+
+A file with lines in this format:
+
+1565647204351 Aadvik Matina
+1565647205599 Keimy Dmetri
+1565647212986 Tyreonna Rehgan
+1565647228897 Heera Eron
+1565647246869 Jeremyah Morrigan
+1565647247170 Khiem Tailee
