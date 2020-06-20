@@ -1,15 +1,42 @@
+# Reactor practise project
 
+Practising with Spring Flux and reactive programming, Java 11, and some low level read/write operations
 
-# Clarity - Backend Code Challenge
+## Problem description
+
+A log file contains newline-terminated, space-separated text formatted like:
+
+`<unix_timestamp> <hostname> <hostname>`
+  
+For example:
+
+```
+1366815793 quark garak
+1366815795 brunt quark
+1366815811 lilac garak
+```
+
+Each line represents connection from a host (left) to another host (right) at a given time. The lines are roughly sorted by timestamp. They might be out of order by maximum 5 minutes.
+
+### Goals
+
+**1. Parse the data with a time_init, time_end**
+
+A tool, that given the name of a file (with the format described above), an init_datetime, an end_datetime, and a Hostname, returns a list of hostnames connected to the given host during the given period
+
+**2. Unlimited Input Parser**
+
+The tool should both parse previously written log files and terminate or collect input from a new log file while it's being written and run indefinitely.
+
+The script will output, once every hour:
+● a list of hostnames connected to a given (configurable) host during the last hour
+● a list of hostnames received connections from a given (configurable) host during the last hour
+● the hostname that generated most connections in the last hour
+
+Both the number of log lines and hostnames can be very high.
+
 
 ## Run
-
-A .jar is provided directly in the .tgz package so the application can be executed right away.
-
-A convenience script has been also included in the tgz file called also `logparser` for Linux shells, that is the equivalent to:
-
-`java -jar connections-log-parser-0.0.1.jar`
-
 
 The executable has two working modes, corresponding with the two goals in the exercise: `parse` and `follow`:
 
@@ -59,10 +86,11 @@ mvn -U clean package
 
 ## Design
 
-### Alternatives Considered
+### Alternatives
 
-* **Spark**: Even if I am not an expert in Spark, it seems the natural choice for this task. It allows processing of huge files efficiently. However I supposed the exercise objective was to evaluate my programming style, and a Spark job would have not showing it.  
-* **Kafka**: Similar to Spark, it has connectors to watch changes on a file then processing them (now using even KSQL some of the objectives of the exercise could have been fulfilled without even programming). I discarded it for the same reason as Spark. 
+* **Spark**: Even if I am not an expert in Spark, it seems the natural choice for this task. It allows processing of huge files efficiently.
+
+* **Kafka**: A distributed log usually used as a messaging platform, it has connectors to watch changes on a file then processing them, then using KSQL some of the objectives of this exercise could have been fulfilled without even programming.
 
 
 ### Structure
@@ -74,8 +102,7 @@ The code compiles to an assembled (über) jar that can be executed from the comm
 
 The main pom.xml file builds the two modules.
 
-Note: I would have liked to provide more unit tests and javadoc in the modules, and in a normal enterprise application I would have done so. But I didn't really have more time for the project
-so I hope the tests and javadoc already included are enough as a sample.
+Note: I would have liked to provide more unit tests and javadoc in the modules, and in a normal enterprise application I would have done so. But I didn't really have more time for the project so I hope the tests and javadoc already included are enough as a sample.
 
 ### Results
 
